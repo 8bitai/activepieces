@@ -1,6 +1,7 @@
 import { EntitySourceType, ProjectResourceType, securityAccess } from '@activepieces/server-shared'
 import { CreateTodoRequestBody, ListTodoAssigneesRequestQuery, ListTodosQueryParams, PrincipalType, ResolveTodoRequestQuery, SeekPage, TodoEnvironment, UpdateTodoRequestBody, UserWithMetaInformation } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
+import { FastifyRequest } from 'fastify'
 import { StatusCodes } from 'http-status-codes'
 import { FlowEntity } from '../flows/flow/flow.entity'
 import { paginationHelper } from '../helper/pagination/pagination-utils'
@@ -140,6 +141,12 @@ const ListTodosRequest = {
 const CreateTodoRequest = {
     schema: {
         body: CreateTodoRequestBody,
+    },
+    preValidation: async (request: FastifyRequest) => {
+        const body = request.body as Record<string, unknown>
+        if (body?.assigneeId != null && !/^[0-9a-zA-Z]{21}$/.test(String(body.assigneeId))) {
+            delete body.assigneeId
+        }
     },
     config: {
         security: securityAccess.project([PrincipalType.SERVICE, PrincipalType.ENGINE], undefined, {

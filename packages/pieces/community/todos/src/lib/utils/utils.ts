@@ -19,7 +19,7 @@ export const createTodoProps = {
     displayName: 'Assignee',
     required: false,
     options: async (_, context) => {
-      const baseApiUrl = context.server.publicUrl;
+      const baseApiUrl = context.server.apiUrl;
       const apiKey = context.server.token;
       const users = await listAssignee(baseApiUrl, apiKey);
       return {
@@ -93,6 +93,7 @@ type ApprovalParms = {
   };
   server: {
     publicUrl: string;
+    apiUrl: string;
     token: string;
   };
   generateResumeUrl: (options: { queryParams: Record<string, any> }) => string;
@@ -109,14 +110,14 @@ export async function sendTodoApproval(context: ApprovalParms, isTest: boolean) 
     })),
     flowId: context.flows.current.id,
     runId: isTest ? undefined : context.run.id,
-    assigneeId: context.propsValue.assigneeId ?? undefined,
+    assigneeId: context.propsValue.assigneeId || undefined,
     resolveUrl: context.generateResumeUrl({
       queryParams: {},
     }),
   };
   return await httpClient.sendRequest<PopulatedTodo>({
     method: HttpMethod.POST,
-    url: `${context.server.publicUrl}v1/todos`,
+    url: `${context.server.apiUrl}v1/todos`,
     body: requestBody,
     authentication: {
       type: AuthenticationType.BEARER_TOKEN,
@@ -126,12 +127,12 @@ export async function sendTodoApproval(context: ApprovalParms, isTest: boolean) 
 }
 
 export async function listAssignee(
-  publicUrl: string,
+  apiUrl: string,
   token: string
 ): Promise<SeekPage<UserWithMetaInformation>> {
   const request: HttpRequest = {
     method: HttpMethod.GET,
-    url: `${publicUrl}v1/todos/assignees`,
+    url: `${apiUrl}v1/todos/assignees`,
     authentication: {
       type: AuthenticationType.BEARER_TOKEN,
       token: token,
