@@ -91,6 +91,20 @@ export function ThemeProvider({
     root.classList.add(resolvedTheme);
   }, [theme, branding]);
 
+  // When embedded in iframe, accept theme from parent (e.g. neutrino-frontend-v3)
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.self === window.top) return;
+    const handler = (event: MessageEvent) => {
+      const data = event.data;
+      if (data?.type === 'AP_SET_THEME' && (data.theme === 'dark' || data.theme === 'light' || data.theme === 'system')) {
+        localStorage.setItem(storageKey, data.theme);
+        setTheme(data.theme);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [storageKey]);
+
   const value = {
     theme,
     setTheme: (theme: Theme) => {
