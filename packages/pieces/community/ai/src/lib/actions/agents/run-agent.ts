@@ -195,16 +195,22 @@ export const runAgent = createAction({
           }
           await context.output.update({ data: outputBuilder.build() });
         } catch (innerError) {
+          const errorMsg = innerError instanceof Error ? innerError.message : String(innerError);
           errors.push({
             type: 'chunk-processing-error',
-            message: 'Error processing chunk',
+            message: `Error processing chunk: ${errorMsg}`,
             details: inspect(innerError),
           });
         }
       }
 
       if (errors.length > 0) {
-        const errorSummary = errors.map(e => `${e.type}: ${e.message}`).join('\n');
+        const errorSummary = errors.map(e => {
+          const detailStr = e.details instanceof Error
+            ? `${e.details.message}`
+            : (typeof e.details === 'string' ? e.details : JSON.stringify(e.details));
+          return `${e.type}: ${e.message}${detailStr ? `\n  Details: ${detailStr}` : ''}`;
+        }).join('\n');
         outputBuilder.addMarkdown(`\n\n**Errors encountered:**\n${errorSummary}`);
         outputBuilder.fail({ message: 'Agent completed with errors' });
         await context.output.update({ data: outputBuilder.build() });

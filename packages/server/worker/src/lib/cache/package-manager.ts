@@ -33,7 +33,7 @@ export const packageManager = (log: FastifyBaseLogger) => ({
             timeoutMs: dayjs.duration(10, 'minutes').asMilliseconds(),
         }))
         if (error) {
-            log.error({ error }, '[PackageManager#install] Failed to install dependencies')
+            log.error({ errorMessage: error.message, errorStack: error.stack, err: error, path, cmd: `bun install ${args.join(' ')} ${filters.join(' ')}` }, '[PackageManager#install] Failed to install dependencies')
             throw error
         }
         return data
@@ -53,11 +53,13 @@ export const packageManager = (log: FastifyBaseLogger) => ({
 })
 
 const sanitizeFilterPath = (filterPath: string): string => {
+    // Allow both forward slashes (Unix) and backslashes (Windows) in paths
+    const normalized = filterPath.replace(/\\/g, '/')
     const allowed = /^(?![.])[a-zA-Z0-9\-_.@/]+$/
-    if (!allowed.test(filterPath)) {
+    if (!allowed.test(normalized)) {
         throw new Error(`Invalid filter path ${filterPath}`)
     }
-    return filterPath
+    return normalized
 }
 
 

@@ -12,6 +12,7 @@ import { pieceMetadataService, pieceRepos } from './metadata/piece-metadata-serv
 
 const CLOUD_API_URL = 'https://cloud.activepieces.com/api/v1/pieces'
 const syncMode = system.get<PieceSyncMode>(AppSystemProp.PIECES_SYNC_MODE)
+const piecesFilter = system.getList(AppSystemProp.PIECES_FILTER)
 
 export const pieceSyncService = (log: FastifyBaseLogger) => ({
     async setup(): Promise<void> {
@@ -36,17 +37,21 @@ export const pieceSyncService = (log: FastifyBaseLogger) => ({
             return
         }
         try {
-            log.info('Starting piece synchronization')
+            const hasFilter = piecesFilter.length > 0
+            log.info({ piecesFilter: hasFilter ? piecesFilter : 'none (syncing all)' }, 'Starting piece synchronization')
             const startTime = performance.now()
-            const [dbPieces, cloudPieces] = await Promise.all([pieceRepos().find({
+            const [dbPieces, allCloudPieces] = await Promise.all([pieceRepos().find({
                 select: {
                     name: true,
                     version: true,
                     pieceType: true,
                 },
             }), listCloudPieces()])
+            const cloudPieces = hasFilter
+                ? filterPiecesByName(allCloudPieces, piecesFilter)
+                : allCloudPieces
             const added = await installNewPieces(cloudPieces, dbPieces, log)
-            const deleted = await deletePiecesIfNotOnCloud(dbPieces, cloudPieces, log)
+            const deleted = await deletePiecesIfNotOnCloud(dbPieces, cloudPieces, log, hasFilter ? piecesFilter : undefined)
 
             log.info({
                 added,
@@ -61,9 +66,24 @@ export const pieceSyncService = (log: FastifyBaseLogger) => ({
     },
 })
 
-async function deletePiecesIfNotOnCloud(dbPieces: PieceMetadataOnly[], cloudPieces: PieceRegistryResponse[], log: FastifyBaseLogger): Promise<number> {
+function filterPiecesByName(pieces: PieceRegistryResponse[], filter: string[]): PieceRegistryResponse[] {
+    const allowedNames = new Set(filter.map(name => name.startsWith('@activepieces/piece-') ? name : `@activepieces/piece-${name}`))
+    return pieces.filter(piece => allowedNames.has(piece.name))
+}
+
+async function deletePiecesIfNotOnCloud(dbPieces: PieceMetadataOnly[], cloudPieces: PieceRegistryResponse[], log: FastifyBaseLogger, filter?: string[]): Promise<number> {
     const cloudMap = new Map<string, true>(cloudPieces.map(cloudPiece => [`${cloudPiece.name}:${cloudPiece.version}`, true]))
-    const piecesToDelete = dbPieces.filter(piece => piece.pieceType === PieceType.OFFICIAL && !cloudMap.has(`${piece.name}:${piece.version}`))
+    const filterSet = filter ? new Set(filter.map(name => name.startsWith('@activepieces/piece-') ? name : `@activepieces/piece-${name}`)) : undefined
+    const piecesToDelete = dbPieces.filter(piece => {
+        if (piece.pieceType !== PieceType.OFFICIAL) {
+            return false
+        }
+        // When a filter is active, also delete pieces not in the filter
+        if (filterSet && !filterSet.has(piece.name)) {
+            return true
+        }
+        return !cloudMap.has(`${piece.name}:${piece.version}`)
+    })
     await pieceMetadataService(log).bulkDelete(piecesToDelete.map(piece => ({ name: piece.name, version: piece.version })))
     return piecesToDelete.length
 }

@@ -119,6 +119,6 @@ export async function createAIModel({
     }
 }
 
-export const anthropicSearchTool = anthropic.tools.webSearch_20250305;
-export const openaiSearchTool = openai.tools.webSearchPreview;
-export const googleSearchTool = google.tools.googleSearch;
+export const anthropicSearchTool: typeof anthropic.tools.webSearch_20250305 = anthropic.tools.webSearch_20250305;
+export const openaiSearchTool: typeof openai.tools.webSearchPreview = openai.tools.webSearchPreview;
+export const googleSearchTool: typeof google.tools.googleSearch = google.tools.googleSearch;

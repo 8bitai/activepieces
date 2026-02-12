@@ -135,13 +135,29 @@ type FinishParams = {
   message?: string;
 };
 
+function findMatchingTool(toolName: string, tools: AgentTool[]): AgentTool | undefined {
+  // Exact match first (works for PIECE and FLOW tools)
+  const exactMatch = tools.find((tool) => tool.toolName === toolName);
+  if (exactMatch) {
+    return exactMatch;
+  }
+  // MCP tools are registered as `${mcpToolName}_${serverName}`, so check
+  // if the tool name ends with `_${mcpTool.toolName}` for MCP-type tools
+  const mcpMatch = tools.find(
+    (tool) =>
+      tool.type === AgentToolType.MCP &&
+      toolName.endsWith(`_${tool.toolName}`),
+  );
+  return mcpMatch;
+}
+
 function getToolMetadata({
   toolName,
   tools,
   baseTool,
 }: GetToolMetadaParams): ToolCallContentBlock {
-  const tool = tools.find((tool) => tool.toolName === toolName);
-  assertNotNullOrUndefined(tool, `Tool ${toolName} not found`);
+  const tool = findMatchingTool(toolName, tools);
+  assertNotNullOrUndefined(tool, `Tool ${toolName} not found in agent tools: [${tools.map(t => t.toolName).join(', ')}]`);
 
   switch (tool.type) {
     case AgentToolType.PIECE: {
@@ -166,12 +182,15 @@ function getToolMetadata({
     }
     case AgentToolType.MCP: {
       assertNotNullOrUndefined(tool.serverUrl, 'Mcp server URL is required');
+      // Extract the original MCP tool name from the composite key (e.g. "list_tickets_zendesk" -> "list_tickets")
+      const mcpToolDisplayName = toolName.endsWith(`_${tool.toolName}`)
+        ? toolName.slice(0, -(tool.toolName.length + 1))
+        : toolName;
       return {
         ...baseTool,
         toolCallType: ToolCallType.MCP,
-        displayName: tool.toolName,
+        displayName: mcpToolDisplayName,
         serverUrl: tool.serverUrl,
-        
       };
     }
   }

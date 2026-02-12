@@ -175,7 +175,9 @@ async function installPieces(log: FastifyBaseLogger, rootWorkspace: string, piec
                 log.error({
                     rootWorkspace,
                     pieces: piecesToInstall.map(piece => `${piece.pieceName}-${piece.pieceVersion}`),
-                    error: installError,
+                    errorMessage: installError.message,
+                    errorStack: installError.stack,
+                    err: installError,
                 }, '[registryPieceManager] Piece installation failed, rolling back')
                 await rollbackInstallation(rootWorkspace, piecesToInstall)
                 throw installError

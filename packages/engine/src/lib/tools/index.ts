@@ -86,22 +86,31 @@ async function resolveProperties(
                 continue
             }
 
-            const propertySchema = await propertyToSchema(
-                property,
-                propertyFromAction,
-                operation,
-                result,
-            )
-            propertyToFill[property] = propertySchema
+            try {
+                const propertySchema = await propertyToSchema(
+                    property,
+                    propertyFromAction,
+                    operation,
+                    result,
+                )
+                propertyToFill[property] = propertySchema
 
-            const propertyDetail = await buildPropertyDetail(
-                property,
-                propertyFromAction,
-                operation,
-                result,
-            )
-            if (!isNil(propertyDetail)) {
-                propertyDetails.push(propertyDetail)
+                const propertyDetail = await buildPropertyDetail(
+                    property,
+                    propertyFromAction,
+                    operation,
+                    result,
+                )
+                if (!isNil(propertyDetail)) {
+                    propertyDetails.push(propertyDetail)
+                }
+            }
+            catch (e) {
+                console.error(`[agentTools] Failed to build schema/detail for property "${property}":`, e)
+                // Use default value if available, otherwise skip
+                if (propertyFromAction.defaultValue !== undefined) {
+                    result[property] = propertyFromAction.defaultValue
+                }
             }
         }
 
@@ -115,26 +124,40 @@ async function resolveProperties(
             result,
         )
 
-        const { output } = await generateText({
-            model,
-            prompt: extractionPrompt,
-            output: Output.object({
-                schema: schemaObject,
+        try {
+            const { output } = await generateText({
+                model,
+                prompt: extractionPrompt,
+                output: Output.object({
+                    schema: schemaObject,
 
-            }),
-            
-        }).catch(error => {
-            if (NoObjectGeneratedError.isInstance(error) && JSONParseError.isInstance(error.cause) && error.text?.startsWith('```json') && error.text?.endsWith('```')) {
-                return {
-                    output: JSON.parse(error.text.replace('```json', '').replace('```', '')),
+                }),
+                
+            }).catch(error => {
+                if (NoObjectGeneratedError.isInstance(error) && JSONParseError.isInstance(error.cause) && error.text?.startsWith('```json') && error.text?.endsWith('```')) {
+                    return {
+                        output: JSON.parse(error.text.replace('```json', '').replace('```', '')),
+                    }
+                }
+                throw error
+            })
+
+            result = {
+                ...result,
+                ...(output as Record<string, unknown>),
+            }
+        }
+        catch (e) {
+            console.error('[agentTools] LLM property extraction failed, using defaults for remaining properties:', e)
+            // Fall back to default values for properties that couldn't be extracted
+            for (const property of Object.keys(propertyToFill)) {
+                if (!(property in result)) {
+                    const propertyFromAction = action.props[property]
+                    if (propertyFromAction.defaultValue !== undefined) {
+                        result[property] = propertyFromAction.defaultValue
+                    }
                 }
             }
-            throw error
-        })
-
-        result = {
-            ...result,
-            ...(output as Record<string, unknown>),
         }
 
     }

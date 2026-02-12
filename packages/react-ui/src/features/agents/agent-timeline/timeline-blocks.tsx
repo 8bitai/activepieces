@@ -29,6 +29,7 @@ import {
   MarkdownVariant,
   TASK_COMPLETION_TOOL_NAME,
   ToolCallStatus,
+  ToolCallType,
   ExecutionToolStatus,
   type ToolCallContentBlock,
 } from '@activepieces/shared';
@@ -75,16 +76,51 @@ export const AgentToolBlock = ({ block, index }: AgentToolBlockProps) => {
 
   const { data: metadata, isLoading } = agentToolHooks.useToolMetadata(block);
 
-  const output = block.output as ExecuteToolResponse | null;
-  const errorMessage = output?.errorMessage as string | null;
   const isDone = block.status === ToolCallStatus.COMPLETED;
-  const isSuccess = output?.status ?? ExecutionToolStatus.FAILED;
   const hasInstructions = !isNil(block.input?.instruction);
-  const resolvedFields = output?.resolvedInput ?? null;
-  const result = output?.output
-    ? parseJsonOrReturnOriginal(output.output)
-    : null;
 
+  // Normalize output for both standard (PIECE/FLOW) and MCP tool formats
+  const { toolStatus, result, errorMessage, resolvedFields } = useMemo(() => {
+    if (block.toolCallType === ToolCallType.MCP) {
+      const mcpOutput = block.output as {
+        content?: { type: string; text: string }[];
+        structuredContent?: Record<string, unknown>;
+        isError?: boolean;
+      } | null;
+      const isError = mcpOutput?.isError ?? false;
+      let mcpResult: unknown = null;
+      if (mcpOutput?.structuredContent) {
+        mcpResult = mcpOutput.structuredContent;
+      } else if (mcpOutput?.content && Array.isArray(mcpOutput.content)) {
+        const textContent = mcpOutput.content.find(
+          (c) => c.type === 'text',
+        );
+        if (textContent) {
+          mcpResult = parseJsonOrReturnOriginal(textContent.text);
+        }
+      }
+      return {
+        toolStatus: isError
+          ? ExecutionToolStatus.FAILED
+          : ExecutionToolStatus.SUCCESS,
+        result: mcpResult,
+        errorMessage: isError ? String(mcpResult ?? 'MCP tool error') : null,
+        resolvedFields: null as Record<string, unknown> | null,
+      };
+    }
+    // Standard PIECE/FLOW tool output
+    const output = block.output as ExecuteToolResponse | null;
+    return {
+      toolStatus: output?.status ?? ExecutionToolStatus.FAILED,
+      result: output?.output
+        ? parseJsonOrReturnOriginal(output.output)
+        : null,
+      errorMessage: (output?.errorMessage as string | null) ?? null,
+      resolvedFields: output?.resolvedInput ?? null,
+    };
+  }, [block.output, block.toolCallType]);
+
+  const isSuccess = toolStatus;
   const defaultTab = resolvedFields ? 'resolvedFields' : 'result';
 
   const renderStatusIcon = () => {
