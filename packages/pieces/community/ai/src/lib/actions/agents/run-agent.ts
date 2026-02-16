@@ -133,6 +133,9 @@ export const runAgent = createAction({
     const errors: { type: string; message: string; details?: unknown }[] = [];
 
     try {
+      const streamStartTime = Date.now()
+      console.log(`[runAgent] Starting streamText at ${new Date().toISOString()}`)
+
       const stream = streamText({
         model: model,
         system: agentUtils.getPrompts(prompt).system,
@@ -144,14 +147,22 @@ export const runAgent = createAction({
         },
       });
 
+      let chunkCount = 0
+      let textDeltaCount = 0
+      let updateTotalMs = 0
+      let lastLogTime = Date.now()
+
       for await (const chunk of stream.fullStream) {
         try {
+          chunkCount++
           switch (chunk.type) {
             case 'text-delta': {
+              textDeltaCount++
               outputBuilder.addMarkdown(chunk.text);
               break;
             }
             case 'tool-call': {
+              console.log(`[runAgent] tool-call: ${chunk.toolName} at +${Date.now() - streamStartTime}ms`)
               if (agentUtils.isTaskCompletionToolCall(chunk.toolName)) {
                 continue;
               }
@@ -164,6 +175,7 @@ export const runAgent = createAction({
               break;
             }
             case 'tool-result': {
+              console.log(`[runAgent] tool-result: ${chunk.toolName} at +${Date.now() - streamStartTime}ms`)
               if (agentUtils.isTaskCompletionToolCall(chunk.toolName)) {
                 continue;
               }
@@ -174,6 +186,7 @@ export const runAgent = createAction({
               break;
             }
             case 'tool-error': {
+              console.log(`[runAgent] tool-error: ${chunk.toolName} at +${Date.now() - streamStartTime}ms`)
               errors.push({
                 type: 'tool-error',
                 message: `Tool ${chunk.toolName} failed`,
@@ -185,6 +198,7 @@ export const runAgent = createAction({
               break;
             }
             case 'error': {
+              console.log(`[runAgent] stream-error at +${Date.now() - streamStartTime}ms: ${inspect(chunk.error)}`)
               errors.push({
                 type: 'stream-error',
                 message: 'Error during streaming',
@@ -193,7 +207,14 @@ export const runAgent = createAction({
               break;
             }
           }
+          const updateStart = Date.now()
           await context.output.update({ data: outputBuilder.build() });
+          updateTotalMs += Date.now() - updateStart
+
+          if (Date.now() - lastLogTime > 5000) {
+            console.log(`[runAgent] Progress: ${chunkCount} chunks, ${textDeltaCount} text-deltas, updateTotal=${updateTotalMs}ms at +${Date.now() - streamStartTime}ms`)
+            lastLogTime = Date.now()
+          }
         } catch (innerError) {
           const errorMsg = innerError instanceof Error ? innerError.message : String(innerError);
           errors.push({
@@ -203,6 +224,8 @@ export const runAgent = createAction({
           });
         }
       }
+
+      console.log(`[runAgent] Stream finished: ${chunkCount} chunks, ${textDeltaCount} text-deltas, updateTotal=${updateTotalMs}ms, totalTime=${Date.now() - streamStartTime}ms`)
 
       if (errors.length > 0) {
         const errorSummary = errors.map(e => {
@@ -216,15 +239,25 @@ export const runAgent = createAction({
         await context.output.update({ data: outputBuilder.build() });
       } else {
         outputBuilder.setStatus(AgentTaskStatus.COMPLETED)
+        console.log(`[runAgent] Setting status to COMPLETED, calling final output.update`)
+        try {
+          await context.output.update({ data: outputBuilder.build() });
+          console.log(`[runAgent] Final output.update succeeded`)
+        } catch (updateError) {
+          console.error(`[runAgent] Final output.update FAILED:`, updateError)
+        }
       }
 
     } catch (error) {
       const errorMessage = `Agent failed unexpectedly: ${inspect(error)}`;
+      console.error(`[runAgent] Agent failed:`, errorMessage)
       outputBuilder.fail({ message: errorMessage });
       await context.output.update({ data: outputBuilder.build() });
       await Promise.all(mcpClients.map(async (client) => client.close()));
     }
 
-    return outputBuilder.build();
+    const finalOutput = outputBuilder.build()
+    console.log(`[runAgent] Returning final output with status="${finalOutput.status}", steps=${finalOutput.steps?.length ?? 0}`)
+    return finalOutput;
   }
 });

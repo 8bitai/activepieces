@@ -88,39 +88,57 @@ export const agentUtils = {
   },
   async constructFlowsTools(params: ConstructFlowsToolsParams): Promise<Record<string, Tool>> {
     const flowTools = params.tools
+    if (flowTools.length === 0) {
+      return {}
+    }
+
     const flowExternalIds = flowTools.map((tool) => tool.externalFlowId)
     const flows = await params.fetchFlows({ externalIds: flowExternalIds })
 
     const flowToolsWithPopulatedFlows = flowTools.map((tool) => {
       const populatedFlow = flows.data.find(f => f.externalId === tool.externalFlowId);
+      if (isNil(populatedFlow)) {
+        console.warn(`[agentFlowTools] Flow not found for externalFlowId="${tool.externalFlowId}" (toolName="${tool.toolName}")`)
+      }
       return !isNil(populatedFlow) ? { ...tool, flow: populatedFlow } : undefined
     }).filter(tool => !isNil(tool));
 
-    const flowsToolsList = await Promise.all(flowToolsWithPopulatedFlows.map(async (tool) => {
-      const triggerSettings = tool.flow.version.trigger.settings as McpTrigger
-      const toolDescription = triggerSettings.input?.toolDescription
-      const returnsResponse = triggerSettings.input?.returnsResponse
+    const flowsToolsList: { name: string; description: string | undefined; inputSchema: z.ZodObject<Record<string, z.ZodTypeAny>>; execute: (inputs: unknown) => Promise<ExecuteToolResponse> }[] = []
 
-      const inputSchema = Object.fromEntries(
-        triggerSettings.input?.inputSchema.map(prop => [
-          fixProperty(prop.name),
-          mcpPropertyToSchema(prop),
-        ]),
-      )
-      return {
-        name: tool.toolName,
-        description: toolDescription,
-        inputSchema: z.object(inputSchema),
-        execute: async (_inputs: unknown) => {
-          return callMcpFlowTool({
-            flowId: tool.flow.id,
-            publicUrl: params.publicUrl,
-            token: params.token,
-            async: !returnsResponse
-          })
-        }
+    for (const tool of flowToolsWithPopulatedFlows) {
+      try {
+        const triggerSettings = tool.flow.version.trigger.settings as McpTrigger
+        const toolDescription = triggerSettings.input?.toolDescription
+        const returnsResponse = triggerSettings.input?.returnsResponse
+        const schemaProperties = triggerSettings.input?.inputSchema ?? []
+
+        const inputSchema = Object.fromEntries(
+          schemaProperties.map(prop => [
+            fixProperty(prop.name),
+            mcpPropertyToSchema(prop),
+          ]),
+        )
+
+        flowsToolsList.push({
+          name: tool.toolName,
+          description: toolDescription,
+          inputSchema: z.object(inputSchema),
+          execute: async (inputs: unknown) => {
+            return callMcpFlowTool({
+              flowId: tool.flow.id,
+              publicUrl: params.publicUrl,
+              token: params.token,
+              async: !returnsResponse,
+              body: inputs as Record<string, unknown> ?? {},
+            })
+          },
+        })
+      } catch (error) {
+        console.error(`[agentFlowTools] Failed to construct flow tool "${tool.toolName}":`, error)
       }
-    }))
+    }
+
+    console.log(`[agentFlowTools] Constructed ${flowsToolsList.length} flow tool(s): [${flowsToolsList.map(t => t.name).join(', ')}]`)
 
     return {
       ...Object.fromEntries(flowsToolsList.map((tool) => [tool.name, tool])),
@@ -143,12 +161,13 @@ async function callMcpFlowTool(params: CallMcpFlowToolParams): Promise<ExecuteTo
       type: AuthenticationType.BEARER_TOKEN,
       token: params.token,
     },
+    body: params.body,
   });
 
   return {
     status: isOkSuccess(response.status) ? ExecutionToolStatus.SUCCESS : ExecutionToolStatus.FAILED,
     output: response.body,
-    resolvedInput: {},
+    resolvedInput: params.body ?? {},
     errorMessage: !isOkSuccess(response.status) ? 'Error' : undefined,
   }
 }
@@ -200,4 +219,5 @@ type CallMcpFlowToolParams = {
   token: string;
   publicUrl: string;
   async: boolean;
+  body: Record<string, unknown>;
 }

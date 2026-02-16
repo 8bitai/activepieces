@@ -6,6 +6,7 @@ import { internalErrorToast } from '@/components/ui/sonner';
 import { flowRunUtils } from '@/features/flow-runs/lib/flow-run-utils';
 import { sampleDataHooks } from '@/features/flows/lib/sample-data-hooks';
 import {
+  AgentTaskStatus,
   FlowAction,
   FlowActionType,
   FlowOperationType,
@@ -202,6 +203,21 @@ export const createRunState = (
             type: 'output',
             value: response.output,
           });
+
+          if (isRunAgent(step)) {
+            const agentOutput = response.output as Record<string, unknown>;
+            if (
+              agentOutput.status === AgentTaskStatus.COMPLETED ||
+              agentOutput.status === AgentTaskStatus.FAILED
+            ) {
+              get().removeStepTestListener(stepName);
+              get().updateSampleData({
+                stepName,
+                output: response.output,
+                input: response.input,
+              });
+            }
+          }
         }
       };
       socket.on(WebsocketClientEvent.TEST_STEP_PROGRESS, handleOnProgress);

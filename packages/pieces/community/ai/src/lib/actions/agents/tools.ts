@@ -101,17 +101,24 @@ export async function constructAgentTools(
 ): Promise<{ tools: Record<string, Tool>, mcpClients: MCPClient[] }> {
 
     const { outputBuilder, structuredOutput, agentTools, context, model } = params;
+
+    const pieceToolDefs = agentTools.filter(tool => tool.type === AgentToolType.PIECE)
+    const flowToolDefs = agentTools.filter(tool => tool.type === AgentToolType.FLOW)
+    const mcpToolDefs = agentTools.filter(tool => tool.type === AgentToolType.MCP)
+
+    console.log(`[constructAgentTools] Received ${agentTools.length} agent tool(s): piece=${pieceToolDefs.length}, flow=${flowToolDefs.length}, mcp=${mcpToolDefs.length}`)
+
     const agentPieceTools = await context.agent.tools({
-      tools: agentTools.filter(tool => tool.type === AgentToolType.PIECE),
+      tools: pieceToolDefs,
       model: model,
     });
     const flowsTools = await agentUtils.constructFlowsTools({
-      tools: agentTools.filter(tool => tool.type === AgentToolType.FLOW),
+      tools: flowToolDefs,
       fetchFlows: context.flows.list,
       publicUrl: context.server.publicUrl,
       token: context.server.token
     })
-    const mcpServerTools = await constructMcpServersTools(agentTools.filter(tool => tool.type === AgentToolType.MCP))
+    const mcpServerTools = await constructMcpServersTools(mcpToolDefs)
     const { mcpClients, tools: mcpTools } = flattenMcpServers(mcpServerTools)
 
     const combinedTools = {
@@ -119,6 +126,8 @@ export async function constructAgentTools(
       ...flowsTools,
       ...mcpTools,
     };
+
+    console.log(`[constructAgentTools] Combined tools: [${Object.keys(combinedTools).join(', ')}] (${Object.keys(combinedTools).length} total, excluding completion tool)`);
 
     return {
         mcpClients,
