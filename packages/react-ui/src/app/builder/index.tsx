@@ -1,6 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 
-import { useBuilderStateContext } from '@/app/builder/builder-hooks';
+import {
+  useBuilderStateContext,
+  useBuilderStateStore,
+} from '@/app/builder/builder-hooks';
 import { DataSelector } from '@/app/builder/data-selector';
 import { CanvasControls } from '@/app/builder/flow-canvas/canvas-controls';
 import { StepSettingsProvider } from '@/app/builder/step-settings/step-settings-context';
@@ -33,6 +36,8 @@ import { flowCanvasConsts } from './flow-canvas/utils/consts';
 import PublishFlowReminderWidget from './flow-canvas/widgets/publish-flow-reminder-widget';
 import { RunInfoWidget } from './flow-canvas/widgets/run-info-widget';
 import { ViewingOldVersionWidget } from './flow-canvas/widgets/viewing-old-version-widget';
+import { LoadingScreen } from '@/components/ui/loading-screen';
+
 import { FlowVersionsList } from './flow-versions';
 import { RunsList } from './run-list';
 import { CursorPositionProvider } from './state/cursor-position-context';
@@ -40,6 +45,14 @@ import { StepSettingsContainer } from './step-settings';
 import { ResizableVerticalPanelsProvider } from './step-settings/resizable-vertical-panels-context';
 const minWidthOfSidebar = 'min-w-[max(20vw,400px)]';
 const animateResizeClassName = `transition-all `;
+
+function BuilderPageGuard() {
+  const store = useBuilderStateStore();
+  if (!store) {
+    return <LoadingScreen />;
+  }
+  return <BuilderPage />;
+}
 
 const BuilderPage = () => {
   const { platform } = platformHooks.useCurrentPlatform();
@@ -184,7 +197,7 @@ const BuilderPage = () => {
 };
 
 BuilderPage.displayName = 'BuilderPage';
-export { BuilderPage };
+export { BuilderPage, BuilderPageGuard };
 
 function constructContainerKey({
   flowVersionId,

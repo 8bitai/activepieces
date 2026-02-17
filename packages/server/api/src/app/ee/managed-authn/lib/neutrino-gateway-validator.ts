@@ -18,6 +18,18 @@ export type NeutrinoGatewayValidateResponse = {
         tenant_name?: string
         name?: string
         email?: string
+        workspace_id?: string
+        workspace_name?: string
+        is_workspace_admin?: boolean
+        is_tenant_owner?: boolean
+        upn?: string
+        iat?: number
+        exp?: number
+        iss?: string
+        aud?: string
+        ver?: string
+        renewal_count?: number
+        original_iat?: number
     }
 }
 
@@ -72,14 +84,18 @@ export async function validateTokenViaNeutrinoGateway(
 
         const p = data.principal
         const externalUserId = p.user_id ?? ''
-        const externalProjectId = p.tenant_id ?? ''
+        // Use workspace_id when present (non-empty), otherwise fall back to tenant_id
+        const workspaceId = (p.workspace_id ?? '').trim()
+        const externalProjectId = workspaceId || (p.tenant_id ?? '')
 
         if (!externalUserId || !externalProjectId) {
             throw new ActivepiecesError({
                 code: ErrorCode.INVALID_BEARER_TOKEN,
-                params: { message: 'Neutrino gateway response missing user_id or tenant_id' },
+                params: { message: 'Neutrino gateway response missing user_id or workspace_id/tenant_id' },
             })
         }
+
+        log.info({ name: 'NeutrinoGatewayValidator', workspaceId, tenantId: p.tenant_id, usingWorkspace: !!workspaceId }, 'Resolved project id')
 
         let resolvedPlatformId: string
         if (platformId) {
@@ -112,7 +128,7 @@ export async function validateTokenViaNeutrinoGateway(
             externalLastName: lastName,
             projectRole: projectRole.name,
             pieces: { filterType: PiecesFilterType.NONE, tags: [] },
-            projectDisplayName: p.tenant_name,
+            projectDisplayName: (workspaceId && p.workspace_name) ? p.workspace_name : p.tenant_name,
         }
     } catch (e) {
         if (e instanceof ActivepiecesError) throw e

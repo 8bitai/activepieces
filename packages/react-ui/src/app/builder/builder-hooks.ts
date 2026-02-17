@@ -20,9 +20,14 @@ export function useBuilderStateContext<T>(
   selector: (state: BuilderState) => T,
 ): T {
   const store = useContext(BuilderStateContext);
-  if (!store)
+  if (!store) {
     throw new Error('Missing BuilderStateContext.Provider in the tree');
+  }
   return useStore(store, selector);
+}
+
+export function useBuilderStateStore(): BuilderStore | null {
+  return useContext(BuilderStateContext);
 }
 
 export type BuilderState = FlowState &

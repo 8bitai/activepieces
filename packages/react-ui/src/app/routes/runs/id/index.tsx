@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ReactFlowProvider } from '@xyflow/react';
 import { useParams } from 'react-router-dom';
 
-import { BuilderPage } from '@/app/builder';
+import { BuilderPageGuard } from '@/app/builder';
 import { BuilderStateProvider } from '@/app/builder/state/builder-state-provider';
 import { LoadingSpinner } from '@/components/ui/spinner';
 import { flowRunsApi } from '@/features/flow-runs/lib/flow-runs-api';
@@ -60,7 +60,7 @@ const FlowRunPage = () => {
           outputSampleData={sampleData ?? {}}
           inputSampleData={sampleDataInput ?? {}}
         >
-          <BuilderPage />
+          <BuilderPageGuard />
         </BuilderStateProvider>
       </ReactFlowProvider>
     )

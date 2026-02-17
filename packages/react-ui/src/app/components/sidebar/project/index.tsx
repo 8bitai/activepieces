@@ -6,7 +6,6 @@ import { getProjectName } from '@/hooks/project-collection';
 import { cn } from '@/lib/utils';
 import {
   isNil,
-  PROJECT_COLOR_PALETTE,
   ProjectType,
   ProjectWithLimits,
 } from '@activepieces/shared';
@@ -31,11 +30,7 @@ const ProjectSideBarItem = ({
   const projectAvatar = isNil(project.icon) ? null : project.type ===
     ProjectType.TEAM ? (
     <Avatar
-      className="size-4 scale-125 text-sm font-bold flex items-center justify-center rounded-[4px]"
-      style={{
-        backgroundColor: PROJECT_COLOR_PALETTE[project.icon.color].color,
-        color: PROJECT_COLOR_PALETTE[project.icon.color].textColor,
-      }}
+      className="size-4 scale-125 text-sm font-bold flex items-center justify-center rounded-[4px] bg-neutral-900 text-white dark:bg-white dark:text-neutral-900"
     >
       <span className="scale-75">{projectName.charAt(0).toUpperCase()}</span>
     </Avatar>

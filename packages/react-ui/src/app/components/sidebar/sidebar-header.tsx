@@ -67,19 +67,7 @@ export const AppSidebarHeader = () => {
   const defaultRoute = determineDefaultRoute(checkAccess);
 
   if (!showSwitcher) {
-    return (
-      <SidebarHeader>
-        <SidebarMenu>
-          <SidebarMenuItem>
-            {state === 'collapsed' ? (
-              <SidebarLogoCollapsed />
-            ) : (
-              <SidebarLogoFull />
-            )}
-          </SidebarMenuItem>
-        </SidebarMenu>
-      </SidebarHeader>
-    );
+    return <SidebarHeader />;
   }
 
   return (

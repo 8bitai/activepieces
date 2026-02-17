@@ -55,36 +55,28 @@ export function ThemeProvider({
     const resolvedTheme = theme === 'system' ? 'light' : theme;
     root.classList.remove('light', 'dark');
     document.title = branding.websiteName;
-    document.documentElement.style.setProperty(
-      '--primary',
-      colorsUtils.hexToHslString(branding.colors.primary.default),
-    );
 
     setFavicon(branding.logos.favIconUrl);
     switch (resolvedTheme) {
       case 'light': {
-        document.documentElement.style.setProperty(
-          '--primary-100',
-          colorsUtils.hexToHslString(branding.colors.primary.light),
-        );
-        document.documentElement.style.setProperty(
-          '--primary-300',
-          colorsUtils.hexToHslString(branding.colors.primary.dark),
-        );
+        document.documentElement.style.setProperty('--primary', '0 0% 9%');
+        document.documentElement.style.setProperty('--primary-foreground', '0 0% 98%');
+        document.documentElement.style.setProperty('--primary-100', '0 0% 96%');
+        document.documentElement.style.setProperty('--primary-300', '0 0% 20%');
         break;
       }
       case 'dark': {
-        document.documentElement.style.setProperty(
-          '--primary-100',
-          colorsUtils.hexToHslString(branding.colors.primary.dark),
-        );
-        document.documentElement.style.setProperty(
-          '--primary-300',
-          colorsUtils.hexToHslString(branding.colors.primary.light),
-        );
+        document.documentElement.style.setProperty('--primary', '0 0% 100%');
+        document.documentElement.style.setProperty('--primary-foreground', '0 0% 9%');
+        document.documentElement.style.setProperty('--primary-100', '0 0% 90%');
+        document.documentElement.style.setProperty('--primary-300', '0 0% 85%');
         break;
       }
       default:
+        document.documentElement.style.setProperty(
+          '--primary',
+          colorsUtils.hexToHslString(branding.colors.primary.default),
+        );
         break;
     }
 
