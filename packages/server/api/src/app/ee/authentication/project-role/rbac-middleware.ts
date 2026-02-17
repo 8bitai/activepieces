@@ -98,7 +98,7 @@ const ignoreRequest = (req: FastifyRequest): boolean => {
         return true
     }
     const ignoredPrefixes = ['/redirect', '/ui']
-    if (ignoredPrefixes.some(p => req.url.startsWith(p))) {
+    if (ignoredPrefixes.some(p => (req.url ?? '').startsWith(p))) {
         return true
     }
     return false

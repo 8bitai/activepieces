@@ -104,9 +104,11 @@ export const ProjectDashboardLayoutHeader = () => {
   const shownItemsUnderMoreDropdown = moreItems.filter(
     (item) => item.to !== pinnedItem?.to && item.show && item.hasPermission,
   );
+  const showPageHeader = !isEmbedded || !embedState.hidePageHeader;
+
   return (
     <div className="flex flex-col gap-1">
-      {!isEmbedded && <ProjectDashboardPageHeader />}
+      {showPageHeader && <ProjectDashboardPageHeader />}
       <Tabs className="px-4">
         {!embedState.hideSideNav && (
           <TabsList variant="outline">

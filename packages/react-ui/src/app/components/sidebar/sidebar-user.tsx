@@ -55,7 +55,7 @@ export function SidebarUser() {
   const isInPlatformAdmin = location.pathname.startsWith('/platform');
   const isCollapsed = state === 'collapsed';
 
-  if (!user || embedState.isEmbedded) {
+  if (!user || (embedState.isEmbedded && embedState.hideSideNav)) {
     return null;
   }
 
@@ -160,7 +160,7 @@ function SidebarPlatformAdminButton() {
   const { embedState } = useEmbedding();
   const navigate = useNavigate();
 
-  if (embedState.isEmbedded || !showPlatformAdminDashboard) {
+  if ((embedState.isEmbedded && embedState.hideSideNav) || !showPlatformAdminDashboard) {
     return null;
   }
 

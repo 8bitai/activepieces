@@ -93,12 +93,12 @@ const EmbedPage = React.memo(() => {
       externalAccessToken,
       locale,
     }: {
-      externalAccessToken: string;
+      externalAccessToken?: string;
       locale: string;
     }) => {
-      const data = await managedAuthApi.generateApToken({
-        externalAccessToken,
-      });
+      const data = await managedAuthApi.generateApToken(
+        externalAccessToken ? { externalAccessToken } : undefined,
+      );
       await i18n.changeLanguage(locale);
       return data;
     },
@@ -111,17 +111,15 @@ const EmbedPage = React.memo(() => {
       event.source === parentWindow &&
       event.data.type === ActivepiecesVendorEventName.VENDOR_INIT
     ) {
-      if (event.data.data.jwtToken) {
-        if (event.data.data.mode) {
-          setTheme(event.data.data.mode);
-        }
-        mutateAsync(
-          {
-            externalAccessToken: event.data.data.jwtToken,
-            locale: event.data.data.locale ?? 'en',
-          },
-          {
-            onSuccess: (data) => {
+      const jwtToken = event.data.data.jwtToken;
+      if (event.data.data.mode) setTheme(event.data.data.mode);
+      mutateAsync(
+        {
+          ...(jwtToken ? { externalAccessToken: jwtToken } : {}),
+          locale: event.data.data.locale ?? 'en',
+        },
+        {
+          onSuccess: (data) => {
               authenticationSession.saveResponse(data, true);
               const configuredRoute = event.data.data.initialRoute ?? '/';
 
@@ -164,18 +162,15 @@ const EmbedPage = React.memo(() => {
               handleClientNavigation();
               notifyVendorPostAuthentication();
             },
-            onError: (error) => {
-              const errorEvent: ActivepiecesClientAuthenticationFailed = {
-                type: ActivepiecesClientEventName.CLIENT_AUTHENTICATION_FAILED,
-                data: error,
-              };
-              parentWindow.postMessage(errorEvent, '*');
-            },
+          onError: (error) => {
+            const errorEvent: ActivepiecesClientAuthenticationFailed = {
+              type: ActivepiecesClientEventName.CLIENT_AUTHENTICATION_FAILED,
+              data: error,
+            };
+            parentWindow.postMessage(errorEvent, '*');
           },
-        );
-      } else {
-        console.error('Token sent via the sdk is empty');
-      }
+        },
+      );
     }
   };
 
