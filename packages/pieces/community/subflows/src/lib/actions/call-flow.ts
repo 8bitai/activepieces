@@ -71,11 +71,12 @@ export const callFlow = createAction({
 
 
         if (!isNil(castedFlowValue)) {
+          const sampleData = (castedFlowValue.exampleData as unknown as { sampleData: object } | undefined)?.sampleData;
           if (mode === 'simple') {
             fields['payload'] = Property.Object({
               displayName: 'Payload',
               required: true,
-              defaultValue: (castedFlowValue.exampleData as unknown as { sampleData: object }).sampleData,
+              ...(sampleData != null ? { defaultValue: sampleData } : {}),
             });
           }
           else{
@@ -84,7 +85,7 @@ export const callFlow = createAction({
               description:
                 'Provide the data to be passed to the flow',
               required: true,
-              defaultValue: (castedFlowValue.exampleData as unknown as { sampleData: object }).sampleData,
+              ...(sampleData != null ? { defaultValue: sampleData } : {}),
             });
           }
         }

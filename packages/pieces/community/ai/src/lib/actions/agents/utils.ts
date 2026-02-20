@@ -111,12 +111,13 @@ export const agentUtils = {
         name: tool.toolName,
         description: toolDescription,
         inputSchema: z.object(inputSchema),
-        execute: async (_inputs: unknown) => {
+        execute: async (inputs: unknown) => {
           return callMcpFlowTool({
             flowId: tool.flow.id,
             publicUrl: params.publicUrl,
             token: params.token,
-            async: !returnsResponse
+            async: !returnsResponse,
+            inputs: inputs as Record<string, unknown>,
           })
         }
       }
@@ -143,12 +144,15 @@ async function callMcpFlowTool(params: CallMcpFlowToolParams): Promise<ExecuteTo
       type: AuthenticationType.BEARER_TOKEN,
       token: params.token,
     },
+    body: {
+      data: params.inputs,
+    },
   });
 
   return {
     status: isOkSuccess(response.status) ? ExecutionToolStatus.SUCCESS : ExecutionToolStatus.FAILED,
     output: response.body,
-    resolvedInput: {},
+    resolvedInput: params.inputs ?? {},
     errorMessage: !isOkSuccess(response.status) ? 'Error' : undefined,
   }
 }
@@ -200,4 +204,5 @@ type CallMcpFlowToolParams = {
   token: string;
   publicUrl: string;
   async: boolean;
+  inputs?: Record<string, unknown>;
 }
