@@ -2,7 +2,6 @@ import path from 'path'
 import { pieceTranslation } from '@activepieces/pieces-framework'
 import { AppSystemProp, filePiecesUtils, memoryLock, rejectedPromiseHandler } from '@activepieces/server-shared'
 import { ApEnvironment, apId, isEmpty, isNil, LocalesEnum, PackageType, PieceType } from '@activepieces/shared'
-import KeyvSqlite from '@keyv/sqlite'
 import dayjs from 'dayjs'
 import { FastifyBaseLogger } from 'fastify'
 import Keyv from 'keyv'
@@ -235,8 +234,16 @@ async function getOrCreateCache(): Promise<KVCacheInstance> {
             const pm2Enabled = system.getBoolean(AppSystemProp.PM2_ENABLED) ?? false
             const cacheId = pm2Enabled ? (process.env.NODE_APP_INSTANCE ?? '0') : 'default'
             const dbPath = path.resolve(path.join(process.cwd(), `pieces-cache-db-${cacheId}.sqlite`))
+            let store: Keyv.Store<string | undefined> | undefined
+            try {
+                const KeyvSqlite = require('@keyv/sqlite')
+                store = new (KeyvSqlite.default ?? KeyvSqlite)(`sqlite://${dbPath}`)
+            }
+            catch {
+                // sqlite3 native bindings unavailable, fall back to in-memory cache
+            }
             const db = new Keyv({
-                store: new KeyvSqlite(`sqlite://${dbPath}`),
+                ...(store ? { store } : {}),
             })
 
             const registry = ((await db.get(META_REGISTRY_KEY)) as PieceRegistryEntry[] | undefined) ?? []

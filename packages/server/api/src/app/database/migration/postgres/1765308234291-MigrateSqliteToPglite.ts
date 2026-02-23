@@ -1,8 +1,9 @@
+import fs from 'node:fs'
+import path from 'node:path'
 import { AppSystemProp, DatabaseType } from '@activepieces/server-shared'
 import { ApEnvironment } from '@activepieces/shared'
 import { DataSource, EntityMetadata, MigrationInterface, QueryRunner } from 'typeorm'
 import { system } from '../../../helper/system/system'
-import { createSqlLiteDataSourceForMigrations } from '../../sqlite-connection'
 
 const log = system.globalLogger()
 
@@ -24,11 +25,16 @@ export class MigrateSqliteToPglite1765308234291 implements MigrationInterface {
             return
         }
 
+        if (!sqlite3BindingsAvailable()) {
+            log.info('[MigrateSqliteToPglite] SQLite3 bindings unavailable, skipping SQLite migration')
+            return
+        }
 
         log.info('[MigrateSqliteToPglite] Starting SQLite to PGLite data migration...')
 
         try {
-            const sqliteDataSource = createSqlLiteDataSourceForMigrations()
+            const sqliteModule = await import('../../sqlite-connection')
+            const sqliteDataSource: DataSource = sqliteModule.createSqlLiteDataSourceForMigrations()
             await sqliteDataSource.initialize()
             await sqliteDataSource.runMigrations()
 
@@ -65,7 +71,7 @@ export class MigrateSqliteToPglite1765308234291 implements MigrationInterface {
         
     }
 
-    private async sqliteHasData(sqliteDataSource: ReturnType<typeof createSqlLiteDataSourceForMigrations>): Promise<boolean> {
+    private async sqliteHasData(sqliteDataSource: DataSource): Promise<boolean> {
         try {
             const result = await sqliteDataSource.query('SELECT 1 FROM project LIMIT 1')
             return result.length > 0
@@ -299,4 +305,25 @@ export class MigrateSqliteToPglite1765308234291 implements MigrationInterface {
 
         return transformed
     }
+}
+
+const sqlite3BindingsAvailable = (): boolean => {
+    const nodeModulesPath = path.join(process.cwd(), 'node_modules', 'sqlite3')
+    if (!fs.existsSync(nodeModulesPath)) {
+        return false
+    }
+
+    const moduleVersion = process.versions.modules
+    const platform = process.platform
+    const arch = process.arch
+
+    const candidates = [
+        path.join(nodeModulesPath, 'lib', 'binding', `node-v${moduleVersion}-${platform}-${arch}`, 'node_sqlite3.node'),
+        path.join(nodeModulesPath, 'build', 'Release', 'node_sqlite3.node'),
+        path.join(nodeModulesPath, 'build', 'Debug', 'node_sqlite3.node'),
+        path.join(nodeModulesPath, 'Release', 'node_sqlite3.node'),
+        path.join(nodeModulesPath, 'Debug', 'node_sqlite3.node'),
+    ]
+
+    return candidates.some((candidate) => fs.existsSync(candidate))
 }

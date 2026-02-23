@@ -14,10 +14,11 @@ const DEFAULT_CURSOR = null
 
 export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     app.get('/', ListTodosRequest, async (request) => {
+        const projectId = request.projectId!
         const { platformId, assigneeId, limit, cursor, statusOptions, title } = request.query
         return todoService(request.log).list({
             platformId,
-            projectId: request.projectId,
+            projectId,
             assigneeId,
             limit: limit ?? DEFAULT_LIMIT,
             cursor: cursor ?? DEFAULT_CURSOR,
@@ -27,15 +28,17 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.get('/:id', GetTodoRequest, async (request) => {
+        const projectId = request.projectId!
         const { id } = request.params
         return todoService(request.log).getOnePopulatedOrThrow({
             id,
             platformId: request.principal.platform.id,
-            projectId: request.projectId,
+            projectId,
         })
     })
 
     app.post('/', CreateTodoRequest, async (request) => {
+        const projectId = request.projectId!
         const { title, description, statusOptions, flowId, runId, assigneeId, resolveUrl, environment } = request.body
         return todoService(request.log).create({
             title,
@@ -47,11 +50,12 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
             environment: environment ?? TodoEnvironment.PRODUCTION,
             resolveUrl,
             platformId: request.principal.platform.id,
-            projectId: request.projectId,
+            projectId,
         })
     })
 
     app.post('/:id', UpdateTodoRequest, async (request) => {
+        const projectId = request.projectId!
         const { id } = request.params
         const { title, description, status, statusOptions, assigneeId, isTest } = request.body
         return todoService(request.log).update({
@@ -62,7 +66,7 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
             statusOptions,
             assigneeId,
             platformId: request.principal.platform.id,
-            projectId: request.projectId,
+            projectId,
             isTest,
             socket: app.io,
         })
@@ -88,11 +92,12 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
     })
 
     app.delete('/:id', DeleteTodoRequest, async (request) => {
+        const projectId = request.projectId!
         const { id } = request.params
         return todoService(request.log).delete({
             id,
             platformId: request.principal.platform.id,
-            projectId: request.projectId,
+            projectId,
         })
     })
 }
