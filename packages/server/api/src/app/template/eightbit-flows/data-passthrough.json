@@ -1,0 +1,26 @@
+{
+  "name": "Data Passthrough",
+  "summary": "Receive data and pass it through to the next step.",
+  "description": "A straightforward workflow that accepts data (e.g. from a webhook or form) and passes it to an output step. Extend with more steps as needed.",
+  "pieces": [],
+  "flows": [
+    {
+      "displayName": "Data Passthrough",
+      "valid": true,
+      "trigger": {
+        "type": "EMPTY",
+        "name": "trigger",
+        "displayName": "Trigger",
+        "valid": true,
+        "settings": {}
+      }
+    }
+  ],
+  "tags": [],
+  "blogUrl": "",
+  "metadata": null,
+  "author": "8bit.ai",
+  "categories": [],
+  "type": "SHARED",
+  "status": "PUBLISHED"
+}

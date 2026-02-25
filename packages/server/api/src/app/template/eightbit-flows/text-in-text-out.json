@@ -1,0 +1,26 @@
+{
+  "name": "Text In, Text Out",
+  "summary": "Process text input and return text output.",
+  "description": "Receive text as input, run simple processing, and return text as output. Ideal for formatting, transformation, or validation workflows.",
+  "pieces": [],
+  "flows": [
+    {
+      "displayName": "Text In, Text Out",
+      "valid": true,
+      "trigger": {
+        "type": "EMPTY",
+        "name": "trigger",
+        "displayName": "Trigger",
+        "valid": true,
+        "settings": {}
+      }
+    }
+  ],
+  "tags": [],
+  "blogUrl": "",
+  "metadata": null,
+  "author": "8bit.ai",
+  "categories": [],
+  "type": "SHARED",
+  "status": "PUBLISHED"
+}

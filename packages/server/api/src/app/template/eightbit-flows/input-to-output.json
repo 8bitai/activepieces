@@ -1,0 +1,26 @@
+{
+  "name": "Input to Output",
+  "summary": "Simple workflow that takes input and produces output.",
+  "description": "A minimal workflow with a single trigger (input) and optional steps for processing and output. Use this as a starting point for custom automation.",
+  "pieces": [],
+  "flows": [
+    {
+      "displayName": "Input to Output",
+      "valid": true,
+      "trigger": {
+        "type": "EMPTY",
+        "name": "trigger",
+        "displayName": "Trigger",
+        "valid": true,
+        "settings": {}
+      }
+    }
+  ],
+  "tags": [],
+  "blogUrl": "",
+  "metadata": null,
+  "author": "8bit.ai",
+  "categories": [],
+  "type": "SHARED",
+  "status": "PUBLISHED"
+}
