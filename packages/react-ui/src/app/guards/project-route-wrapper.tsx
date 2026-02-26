@@ -19,12 +19,12 @@ export const TokenCheckerWrapper: React.FC<{ children: React.ReactNode }> = ({
   const { projectId: projectIdFromParams } = useParams<{
     projectId: string;
   }>();
+  const hasAccessToProject =
+    projectCollectionUtils.useHasAccessToProject(projectIdFromParams ?? '');
 
   if (isNil(projectIdFromParams)) {
     return <Navigate to="/sign-in" replace />;
   }
-  const hasAccessToProject =
-    projectCollectionUtils.useHasAccessToProject(projectIdFromParams);
 
   if (!hasAccessToProject) {
     toast.error(t('Invalid Access'), {

@@ -55,41 +55,47 @@ export function ThemeProvider({
     const resolvedTheme = theme === 'system' ? 'light' : theme;
     root.classList.remove('light', 'dark');
     document.title = branding.websiteName;
-    document.documentElement.style.setProperty(
-      '--primary',
-      colorsUtils.hexToHslString(branding.colors.primary.default),
-    );
 
     setFavicon(branding.logos.favIconUrl);
     switch (resolvedTheme) {
       case 'light': {
-        document.documentElement.style.setProperty(
-          '--primary-100',
-          colorsUtils.hexToHslString(branding.colors.primary.light),
-        );
-        document.documentElement.style.setProperty(
-          '--primary-300',
-          colorsUtils.hexToHslString(branding.colors.primary.dark),
-        );
+        document.documentElement.style.setProperty('--primary', '0 0% 9%');
+        document.documentElement.style.setProperty('--primary-foreground', '0 0% 98%');
+        document.documentElement.style.setProperty('--primary-100', '0 0% 96%');
+        document.documentElement.style.setProperty('--primary-300', '0 0% 20%');
         break;
       }
       case 'dark': {
-        document.documentElement.style.setProperty(
-          '--primary-100',
-          colorsUtils.hexToHslString(branding.colors.primary.dark),
-        );
-        document.documentElement.style.setProperty(
-          '--primary-300',
-          colorsUtils.hexToHslString(branding.colors.primary.light),
-        );
+        document.documentElement.style.setProperty('--primary', '0 0% 100%');
+        document.documentElement.style.setProperty('--primary-foreground', '0 0% 9%');
+        document.documentElement.style.setProperty('--primary-100', '0 0% 90%');
+        document.documentElement.style.setProperty('--primary-300', '0 0% 85%');
         break;
       }
       default:
+        document.documentElement.style.setProperty(
+          '--primary',
+          colorsUtils.hexToHslString(branding.colors.primary.default),
+        );
         break;
     }
 
     root.classList.add(resolvedTheme);
   }, [theme, branding]);
+
+  // When embedded in iframe, accept theme from parent (e.g. neutrino-frontend-v3)
+  useEffect(() => {
+    if (typeof window === 'undefined' || window.self === window.top) return;
+    const handler = (event: MessageEvent) => {
+      const data = event.data;
+      if (data?.type === 'AP_SET_THEME' && (data.theme === 'dark' || data.theme === 'light' || data.theme === 'system')) {
+        localStorage.setItem(storageKey, data.theme);
+        setTheme(data.theme);
+      }
+    };
+    window.addEventListener('message', handler);
+    return () => window.removeEventListener('message', handler);
+  }, [storageKey]);
 
   const value = {
     theme,

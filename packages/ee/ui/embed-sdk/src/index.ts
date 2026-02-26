@@ -112,7 +112,8 @@ export interface ActivepiecesVendorInit {
     disableNavigationInBuilder: boolean | 'keep_home_button_only';
     hideFolders?: boolean;
     sdkVersion?: string;
-    jwtToken: string;
+    /** Omit when using session cookie (no embed-token endpoint) */
+    jwtToken?: string;
     initialRoute?: string 
     fontUrl?: string;
     fontFamily?: string;
@@ -165,7 +166,8 @@ type EmbeddingParam = {
 }
 type ConfigureParams = {
   instanceUrl: string;
-  jwtToken: string;
+  /** Omit to use session cookie (AP_EMBED_SESSION_COOKIE_NAME); no embed-token call */
+  jwtToken?: string;
   prefix?: string;
   embedding?: EmbeddingParam;
 }
@@ -196,13 +198,13 @@ class ActivepiecesEmbedded {
   };
   _embeddingState?: EmbeddingParam;
   configure({
-    jwtToken,
+    jwtToken = '',
     instanceUrl,
     embedding,
     prefix,
   }: ConfigureParams) {
     this._instanceUrl = this._removeTrailingSlashes(instanceUrl);
-    this._jwtToken = jwtToken;
+    this._jwtToken = jwtToken ?? '';
     this._prefix = this._removeTrailingSlashes(this._prependForwardSlashToRoute(prefix ?? '/'));
     this._embeddingState = embedding;
     if (embedding?.containerId) {
@@ -267,7 +269,7 @@ class ActivepiecesEmbedded {
                 disableNavigationInBuilder: this._embeddingState?.builder?.disableNavigation ?? false,
                 hideFolders: this._embeddingState?.hideFolders ?? false,
                 hideFlowNameInBuilder: this._embeddingState?.builder?.hideFlowName ?? false,
-                jwtToken: this._jwtToken,
+                ...(this._jwtToken ? { jwtToken: this._jwtToken } : {}),
                 initialRoute,
                 fontUrl: this._embeddingState?.styling?.fontUrl,
                 fontFamily: this._embeddingState?.styling?.fontFamily,
@@ -342,6 +344,10 @@ class ActivepiecesEmbedded {
     const iframe = document.createElement('iframe');
     iframe.src = src;
     iframe.setAttribute('allow', 'clipboard-read; clipboard-write');
+    iframe.style.border = 'none';
+    iframe.style.display = 'block';
+    iframe.style.width = '100%';
+    iframe.style.height = '100%';
     return iframe;
   }
 
@@ -476,6 +482,12 @@ class ActivepiecesEmbedded {
       },
     };
     this._dashboardAndBuilderIframeWindow.postMessage(event, '*');
+  }
+
+  /** Sync theme with the embed (e.g. when parent app theme changes). Accepted: 'light' | 'dark' | 'system'. */
+  setTheme(theme: 'light' | 'dark' | 'system') {
+    if (!this._dashboardAndBuilderIframeWindow) return;
+    this._dashboardAndBuilderIframeWindow.postMessage({ type: 'AP_SET_THEME', theme }, '*');
   }
 
   private _prependForwardSlashToRoute(route: string) {
@@ -672,17 +684,24 @@ class ActivepiecesEmbedded {
       }
     }
   }
-  private async fetchEmbeddingAuth(params:{jwtToken:string} | undefined) {
+  private async fetchEmbeddingAuth(params:{jwtToken?: string} | undefined) {
     if(this._embeddingAuth) {
       return this._embeddingAuth;
     }
-    const jwtToken = params?.jwtToken?? this._jwtToken;
-    if(!jwtToken) {
-      this._errorCreator('jwt token not found');
-    }
-    const response = await this.request({path: '/managed-authn/external-token', method: 'POST', body: {
-      externalAccessToken: jwtToken,
-    }}, false)
+    const jwtToken = params?.jwtToken ?? this._jwtToken;
+    const url = `${this._removeTrailingSlashes(this._instanceUrl)}/api/v1/managed-authn/external-token`;
+    const response = jwtToken
+      ? await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ externalAccessToken: jwtToken }),
+        }).then(res => res.json())
+      : await fetch(url, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: '{}',
+          credentials: 'include',
+        }).then(res => res.json());
     this._embeddingAuth = {
       userJwtToken: response.token,
       platformId: response.platformId,

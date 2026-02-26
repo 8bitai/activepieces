@@ -1,6 +1,9 @@
 import { InfoCircledIcon } from '@radix-ui/react-icons';
 import { useMutation } from '@tanstack/react-query';
 import { t } from 'i18next';
+import { Check, Save } from 'lucide-react';
+import { useState } from 'react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/spinner';
@@ -9,10 +12,13 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { flowsApi } from '@/features/flows/lib/flows-api';
 import { flowHooks } from '@/features/flows/lib/flow-hooks';
 import { useAuthorization } from '@/hooks/authorization-hooks';
+import { API_URL } from '@/lib/api';
 import { RightSideBarType } from '@/lib/types';
 import {
+  FlowOperationType,
   FlowRun,
   FlowStatusUpdatedResponse,
   FlowVersion,
@@ -37,6 +43,7 @@ const PublishFlowReminderWidget = () => {
     setRightSidebar,
     flowVersion,
     run,
+    outputSampleData,
   ] = useBuilderStateContext((state) => [
     state.saving,
     state.isPublishing,
@@ -48,6 +55,7 @@ const PublishFlowReminderWidget = () => {
     state.setRightSidebar,
     state.flowVersion,
     state.run,
+    state.outputSampleData,
   ]);
   const showShouldPublishButton = useShouldShowPublishButton({
     flowVersion,
@@ -86,6 +94,47 @@ const PublishFlowReminderWidget = () => {
       },
     });
 
+  const [curlSaved, setCurlSaved] = useState(false);
+
+  const webhookUrl = `${API_URL}/v1/webhooks/${flow.id}/sync`;
+  const triggerSampleData = outputSampleData?.[flowVersion.trigger.name];
+  const bodyJson = triggerSampleData
+    ? JSON.stringify(triggerSampleData, null, 2)
+    : '{}';
+  const curlCommand = [
+    `curl -X POST '${webhookUrl}'`,
+    `  -H 'Content-Type: application/json'`,
+    `  -d '${bodyJson.replace(/'/g, "'\\''")}'`,
+  ].join(' \\\n');
+
+  const { mutate: saveCurl, isPending: isSavingCurl } = useMutation({
+    mutationFn: async () => {
+      const updatedFlow = await flowsApi.update(flow.id, {
+        type: FlowOperationType.UPDATE_METADATA,
+        request: {
+          metadata: {
+            ...(flow.metadata ?? {}),
+            webhookUrl,
+            webhookCurl: curlCommand,
+          },
+        },
+      });
+      return updatedFlow;
+    },
+    onSuccess: (updatedFlow) => {
+      setFlow(updatedFlow);
+      setCurlSaved(true);
+      toast.success(t('Webhook curl saved to flow metadata'), {
+        description: curlCommand,
+        duration: 6000,
+      });
+      setTimeout(() => setCurlSaved(false), 2000);
+    },
+    onError: () => {
+      toast.error(t('Failed to save webhook curl'));
+    },
+  });
+
   if (!showShouldPublishButton) {
     return null;
   }
@@ -115,6 +164,29 @@ const PublishFlowReminderWidget = () => {
               {t('Discard changes')}
             </Button>
           )}
+
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                variant="outline"
+                className="z-50 gap-1"
+                loading={isSavingCurl}
+                onClick={() => saveCurl()}
+              >
+                {curlSaved ? (
+                  <Check className="size-3.5" />
+                ) : (
+                  <Save className="size-3.5" />
+                )}
+                {curlSaved ? t('Saved!') : t('Save curl')}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent className="max-w-xs">
+              <p className="font-medium mb-1">{t('Saves to flow metadata:')}</p>
+              <pre className="text-xs whitespace-pre-wrap break-all">{curlCommand}</pre>
+            </TooltipContent>
+          </Tooltip>
 
           <Tooltip>
             <TooltipTrigger asChild>

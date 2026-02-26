@@ -10,11 +10,15 @@ import qs from 'qs';
 import { authenticationSession } from '@/lib/authentication-session';
 import { ApErrorParams, ErrorCode, isNil } from '@activepieces/shared';
 
+// Use same origin (e.g. 4200) so Vite proxy can forward /api to backend (3000). Set VITE_API_BASE_URL only when needed (e.g. embed from another origin).
+const envApiBase = (import.meta.env.VITE_API_BASE_URL as string) ?? '';
 export const API_BASE_URL =
   import.meta.env.MODE === 'cloud'
     ? 'https://cloud.activepieces.com'
-    : window.location.origin;
-export const API_URL = `${API_BASE_URL}/api`;
+    : (envApiBase.length > 0 ? envApiBase.replace(/\/$/, '') : window.location.origin);
+// When using VITE_API_BASE_URL we talk directly to backend (no /api prefix on backend); otherwise origin + /api and proxy rewrites to backend.
+const useDirectBackend = envApiBase.length > 0;
+export const API_URL = useDirectBackend ? API_BASE_URL : `${API_BASE_URL}/api`;
 
 const disallowedRoutes = [
   '/v1/managed-authn/external-token',

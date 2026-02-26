@@ -25,6 +25,12 @@ import { migrateFlowVersionTemplateList } from '../flows/flow-version/migrations
 import { system } from '../helper/system/system'
 import { platformService } from '../platform/platform.service'
 import { communityTemplates } from './community-templates.service'
+import {
+    CATEGORY_8BIT_TEMPLATES,
+    get8bitTemplateById,
+    get8bitTemplates,
+    is8bitTemplateId,
+} from './eightbit-templates'
 import { templateService } from './template.service'
 
 const edition = system.getEdition()
@@ -32,19 +38,41 @@ const edition = system.getEdition()
 
 export const templateController: FastifyPluginAsyncTypebox = async (app) => {
     app.get('/:id', GetParams, async (request) => {
-        const template = await templateService(app.log).getOne({ id: request.params.id })
+        const log = request.log
+        const templateId = request.params.id
+        log.info({ templateId }, '[template:get] Step 1: request received')
+
+        const template = await templateService(app.log).getOne({ id: templateId })
+        log.info({ templateId, fromDb: !isNil(template) }, '[template:get] Step 2: DB lookup done')
+
         if (!isNil(template)) {
+            log.info({ templateId }, '[template:get] Step 3: returning template from DB')
             return template
         }
-        if (edition !== ApEdition.CLOUD) {
-            return communityTemplates.getOrThrow(request.params.id)
+        const eightbitTemplate = is8bitTemplateId(templateId) ? get8bitTemplateById(templateId) : undefined
+        if (!isNil(eightbitTemplate)) {
+            log.info({ templateId }, '[template:get] Step 3b: returning 8bit template')
+            return eightbitTemplate
         }
+        if (edition !== ApEdition.CLOUD) {
+            log.info({ templateId }, '[template:get] Step 4: not in DB, fetching from cloud')
+            try {
+                const cloudTemplate = await communityTemplates.getOrThrow(templateId)
+                log.info({ templateId }, '[template:get] Step 5: cloud fetch OK, returning template')
+                return cloudTemplate
+            }
+            catch (err) {
+                log.error({ templateId, err }, '[template:get] Step 5 FAILED: cloud fetch error')
+                throw err
+            }
+        }
+        log.info({ templateId }, '[template:get] Step 4: CLOUD edition but template not in DB, 404')
         throw new ActivepiecesError({
             code: ErrorCode.ENTITY_NOT_FOUND,
             params: {
                 entityType: 'template',
-                entityId: request.params.id,
-                message: `Template ${request.params.id} not found`,
+                entityId: templateId,
+                message: `Template ${templateId} not found`,
             },
         })
     })
@@ -53,7 +81,16 @@ export const templateController: FastifyPluginAsyncTypebox = async (app) => {
         if (edition === ApEdition.CLOUD) {
             return flagService.getOne(ApFlagId.TEMPLATES_CATEGORIES)
         }
-        return communityTemplates.getCategories()
+        const raw = await communityTemplates.getCategories()
+        const cloudArray = Array.isArray(raw)
+            ? raw
+            : (raw && typeof raw === 'object' && Array.isArray((raw as { value?: string[] }).value)
+                ? (raw as { value: string[] }).value
+                : [])
+        const merged = cloudArray.includes(CATEGORY_8BIT_TEMPLATES)
+            ? cloudArray
+            : [...cloudArray, CATEGORY_8BIT_TEMPLATES]
+        return { value: merged }
     })
 
     app.get('/', ListTemplatesParams, async (request) => {
@@ -206,6 +243,9 @@ async function loadOfficialTemplatesOrReturnEmpty(
     if (!isNil(query.type) && query.type !== TemplateType.OFFICIAL) {
         return []
     }
+    if (query.category === CATEGORY_8BIT_TEMPLATES) {
+        return get8bitTemplates()
+    }
     if (edition === ApEdition.CLOUD) {
         const officialTemplatesFromCloud = await templateService(log).list({
             platformId: null,
@@ -215,7 +255,11 @@ async function loadOfficialTemplatesOrReturnEmpty(
         return officialTemplatesFromCloud.data
     }
     const loadTemplatesFromCloud = await communityTemplates.list({ ...query, type: TemplateType.OFFICIAL })
-    return loadTemplatesFromCloud.data
+    const cloudData = loadTemplatesFromCloud.data
+    if (isNil(query.category) || query.category === '') {
+        return [...cloudData, ...get8bitTemplates()]
+    }
+    return cloudData
 }
 
 async function loadCustomTemplatesOrReturnEmpty(

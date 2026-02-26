@@ -175,6 +175,13 @@ const systemPropValidators: {
         }
         return true
     },
+
+    // Embed auth via Neutrino gateway (optional)
+    [AppSystemProp.NEUTRINO_GATEWAY_URL]: (value: string) => !value || value.trim() === '' ? true : urlValidator(value),
+    [AppSystemProp.NEUTRINO_GATEWAY_VALIDATE_PATH]: (_value: string) => true,
+    [AppSystemProp.EMBED_AUTH_VIA_NEUTRINO_GATEWAY]: booleanValidator,
+    [AppSystemProp.EMBED_PLATFORM_ID]: (_value: string) => true,
+    [AppSystemProp.EMBED_SESSION_COOKIE_NAME]: (_value: string) => true,
 }
 
 

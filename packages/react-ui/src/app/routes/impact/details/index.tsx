@@ -203,6 +203,7 @@ const createColumns = (
 
 export function FlowsDetails({ report, isLoading }: FlowsDetailsProps) {
   const { timeSavedPerRunOverrides } = useContext(RefreshAnalyticsContext);
+  const projects = projectCollectionUtils.useAll();
 
   const flowsDetailsWithOverrides = useMemo(() => {
     if (!report) return undefined;
@@ -233,7 +234,6 @@ export function FlowsDetails({ report, isLoading }: FlowsDetailsProps) {
       }))
       .sort((a, b) => b.minutesSaved - a.minutesSaved) ?? [];
 
-  const projects = projectCollectionUtils.useAll();
   const columns = createColumns(
     report,
     projects.data,

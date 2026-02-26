@@ -1,6 +1,6 @@
 import { useVirtualizer } from '@tanstack/react-virtual';
 import { t } from 'i18next';
-import { Search, Plus, LineChart, Trophy, Compass } from 'lucide-react';
+import { Search, Plus, LineChart, Compass } from 'lucide-react';
 import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { useDebounce } from 'use-debounce';
@@ -115,6 +115,43 @@ export function ProjectDashboardSidebar() {
     [navigate],
   );
 
+  const permissionFilter = (link: SidebarGeneralItemType) => {
+    if (link.type === 'link') {
+      return isNil(link.hasPermission) || link.hasPermission;
+    }
+    return true;
+  };
+
+  const handleExploreClick = useCallback(() => {
+    templatesTelemetryApi.sendEvent({
+      eventType: TemplateTelemetryEventType.EXPLORE_VIEW,
+      userId: currentUser?.id,
+    });
+  }, [currentUser?.id]);
+
+  const exploreLink: SidebarItemType = {
+    type: 'link',
+    to: '/templates',
+    label: t('Explore'),
+    show: true,
+    icon: Compass,
+    hasPermission: true,
+    isSubItem: false,
+    onClick: handleExploreClick,
+  };
+
+  const impactLink: SidebarItemType = {
+    type: 'link',
+    to: '/impact',
+    label: t('Impact'),
+    icon: LineChart,
+    show: true,
+    hasPermission: true,
+    isSubItem: false,
+  };
+
+  const items = [exploreLink, impactLink].filter(permissionFilter);
+
   // Virtual scrolling setup
   const ITEM_HEIGHT = state === 'collapsed' ? 40 : 44;
 
@@ -147,54 +184,6 @@ export function ProjectDashboardSidebar() {
     [location.pathname, handleProjectSelect],
   );
 
-  const permissionFilter = (link: SidebarGeneralItemType) => {
-    if (link.type === 'link') {
-      return isNil(link.hasPermission) || link.hasPermission;
-    }
-    return true;
-  };
-
-  const handleExploreClick = useCallback(() => {
-    templatesTelemetryApi.sendEvent({
-      eventType: TemplateTelemetryEventType.EXPLORE_VIEW,
-      userId: currentUser?.id,
-    });
-  }, []);
-
-  const exploreLink: SidebarItemType = {
-    type: 'link',
-    to: '/templates',
-    label: t('Explore'),
-    show: true,
-    icon: Compass,
-    hasPermission: true,
-    isSubItem: false,
-    onClick: handleExploreClick,
-  };
-
-  const impactLink: SidebarItemType = {
-    type: 'link',
-    to: '/impact',
-    label: t('Impact'),
-    icon: LineChart,
-    show: true,
-    hasPermission: true,
-    isSubItem: false,
-  };
-
-  const leaderboardLink: SidebarItemType = {
-    type: 'link',
-    to: '/leaderboard',
-    label: t('Leaderboard'),
-    icon: Trophy,
-    show: true,
-    hasPermission: true,
-    isSubItem: false,
-  };
-
-  const items = [exploreLink, impactLink, leaderboardLink].filter(
-    permissionFilter,
-  );
 
   return (
     !embedState.hideSideNav && (

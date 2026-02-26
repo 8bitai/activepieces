@@ -4,7 +4,7 @@ import { t } from 'i18next';
 import { FileX } from 'lucide-react';
 import { Link, useParams } from 'react-router-dom';
 
-import { BuilderPage } from '@/app/builder';
+import { BuilderPageGuard } from '@/app/builder';
 import { BuilderStateProvider } from '@/app/builder/state/builder-state-provider';
 import { buttonVariants } from '@/components/ui/button';
 import { LoadingSpinner } from '@/components/ui/spinner';
@@ -78,7 +78,7 @@ const FlowBuilderPage = () => {
         outputSampleData={sampleData ?? {}}
         inputSampleData={sampleDataInput ?? {}}
       >
-        <BuilderPage />
+        <BuilderPageGuard />
       </BuilderStateProvider>
     </ReactFlowProvider>
   );
