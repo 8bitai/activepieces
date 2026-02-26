@@ -25,21 +25,21 @@ export const managedAuthnController: FastifyPluginAsyncTypebox = async (
         async (req): Promise<AuthenticationResponse> => {
             const cookieName = system.get(AppSystemProp.EMBED_SESSION_COOKIE_NAME)
             const tokenFromCookie = cookieName ? getTokenFromCookie(req.headers.cookie, cookieName) : null
-            // When cookie name is set, use only cookie (no body). Otherwise use body token.
-            const externalAccessToken = cookieName
-                ? (tokenFromCookie ?? '').trim()
-                : (req.body?.externalAccessToken ?? '').trim()
+            // Prefer cookie when present; otherwise allow body token (e.g. cross-origin embed where cookie isn't sent).
+            const externalAccessToken =
+                (tokenFromCookie ?? '').trim() ||
+                (req.body?.externalAccessToken ?? '').trim()
             if (!externalAccessToken) {
                 throw new ActivepiecesError({
                     code: ErrorCode.INVALID_BEARER_TOKEN,
                     params: {
                         message: cookieName
-                            ? 'Missing session cookie: send request with credentials: "include" so the cookie is sent'
+                            ? 'Missing session cookie: send request with credentials: "include" so the cookie is sent, or pass externalAccessToken in the request body'
                             : 'Missing externalAccessToken in body',
                     },
                 })
             }
-            req.log.info({ name: 'managed-authn', fromCookie: !!cookieName }, 'POST /external-token received')
+            req.log.info({ name: 'managed-authn', fromCookie: !!tokenFromCookie }, 'POST /external-token received')
             try {
                 const response = await managedAuthnService(req.log).externalToken({
                     externalAccessToken: externalAccessToken as string,
