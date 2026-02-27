@@ -9,6 +9,9 @@ import clearModule from 'clear-module'
 import { FastifyBaseLogger } from 'fastify'
 import { AppSystemProp, environmentVariables } from '../system-props'
 
+/** Cache for dev pieces: only reload from disk when package.json or src/index.js mtime changes. */
+const devPieceCache = new Map<string, { signature: number, metadata: PieceMetadata }>()
+
 const DIST_PIECES_PATH = resolve(cwd(), 'dist', 'packages', 'pieces')
 const SOURCE_PIECES_PATH = resolve(cwd(), 'packages', 'pieces')
 
@@ -96,9 +99,35 @@ const findAllPiecesFolder = async (folderPath: string): Promise<string[]> => {
     return paths
 }
 
+/** Returns a signature (max mtime) for the piece folder; changes when package.json or entry file change. */
+async function getDevPieceSignature(folderPath: string): Promise<number> {
+    let signature = 0
+    const candidates = [
+        join(folderPath, 'package.json'),
+        join(folderPath, 'src', 'index.js'),
+        join(folderPath, 'src', 'index.mjs'),
+    ]
+    for (const filePath of candidates) {
+        try {
+            const s = await stat(filePath)
+            if (s.mtimeMs > signature) signature = s.mtimeMs
+        }
+        catch {
+            // file missing, skip
+        }
+    }
+    return signature
+}
+
 const loadPieceFromFolder = async (
     folderPath: string,
 ): Promise<PieceMetadata | null> => {
+    const signature = await getDevPieceSignature(folderPath)
+    const cached = devPieceCache.get(folderPath)
+    if (cached && cached.signature === signature) {
+        return cached.metadata
+    }
+
     const indexPath = join(folderPath, 'src', 'index')
     clearModule(indexPath)
     const packageJson = importFresh<Record<string, string>>(
@@ -125,5 +154,6 @@ const loadPieceFromFolder = async (
         i18n,
     }
 
+    devPieceCache.set(folderPath, { signature, metadata })
     return metadata
 }
