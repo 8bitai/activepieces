@@ -1,7 +1,8 @@
 import deepEqual from 'deep-equal';
 import { t } from 'i18next';
-import React, { useContext, useEffect, useRef, useState } from 'react';
+import React, { useContext, useRef, useState } from 'react';
 import { FieldValues, UseFormReturn, useWatch } from 'react-hook-form';
+import { useDeepCompareEffectNoCheck } from 'use-deep-compare-effect';
 
 import { useBuilderStateContext } from '@/app/builder/builder-hooks';
 import { SearchableSelect } from '@/components/custom/searchable-select';
@@ -113,7 +114,7 @@ const DynamicDropdownPiecePropertyImplementation = React.memo(
       );
     };
 
-    useEffect(() => {
+    useDeepCompareEffectNoCheck(() => {
       if (
         !isFirstRender.current &&
         !deepEqual(previousValues.current, refresherValues)
@@ -124,7 +125,7 @@ const DynamicDropdownPiecePropertyImplementation = React.memo(
       previousValues.current = refresherValues;
       isFirstRender.current = false;
       refresh();
-    }, refresherValues);
+    }, [refresherValues]);
 
     const selectOptions = dropdownState.options.map((option) => ({
       label: option.label,

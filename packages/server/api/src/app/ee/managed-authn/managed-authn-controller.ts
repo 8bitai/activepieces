@@ -1,11 +1,28 @@
 import { ApplicationEventName, ManagedAuthnRequestBody } from '@activepieces/ee-shared'
-import { securityAccess } from '@activepieces/server-shared'
-import {
-    AuthenticationResponse,
-} from '@activepieces/shared'
+import { AppSystemProp, securityAccess } from '@activepieces/server-shared'
+import { ActivepiecesError, AuthenticationResponse, ErrorCode } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox } from '@fastify/type-provider-typebox'
 import { applicationEvents } from '../../helper/application-events'
+import { system } from '../../helper/system/system'
 import { managedAuthnService } from './managed-authn-service'
+
+function getTokenFromCookie(cookieHeader: string | undefined, cookieName: string): string | null {
+    if (!cookieHeader?.trim() || !cookieName?.trim()) return null
+    for (const part of cookieHeader.split(';').map(p => p.trim())) {
+        const eq = part.indexOf('=')
+        if (eq > 0 && part.slice(0, eq).trim() === cookieName.trim())
+            return part.slice(eq + 1).trim() || null
+    }
+    return null
+}
+
+function getTokenFromAuthHeader(authHeader: string | undefined): string | null {
+    if (!authHeader?.trim()) return null
+    const parts = authHeader.trim().split(/\s+/)
+    if (parts.length === 2 && parts[0].toLowerCase() === 'bearer')
+        return parts[1].trim() || null
+    return null
+}
 
 export const managedAuthnController: FastifyPluginAsyncTypebox = async (
     app,
@@ -14,18 +31,55 @@ export const managedAuthnController: FastifyPluginAsyncTypebox = async (
         '/external-token',
         ManagedAuthnRequest,
         async (req): Promise<AuthenticationResponse> => {
-            const { externalAccessToken } = req.body
-
-            const response = await managedAuthnService(req.log).externalToken({
-                externalAccessToken,
-            })
-            applicationEvents(req.log).sendUserEvent(req, {
-                action: ApplicationEventName.USER_SIGNED_UP,
-                data: {
-                    source: 'managed',
-                },
-            })
-            return response
+            const cookieName = system.get(AppSystemProp.EMBED_SESSION_COOKIE_NAME)
+            const tokenFromCookie = cookieName ? getTokenFromCookie(req.headers.cookie, cookieName) : null
+            const tokenFromHeader = getTokenFromAuthHeader(req.headers.authorization)
+            // Prefer cookie, then body, then Authorization header (e.g. parent proxy or SDK sending Bearer).
+            const externalAccessToken =
+                (tokenFromCookie ?? '').trim() ||
+                (req.body?.externalAccessToken ?? '').trim() ||
+                (tokenFromHeader ?? '').trim()
+            if (!externalAccessToken) {
+                throw new ActivepiecesError({
+                    code: ErrorCode.INVALID_BEARER_TOKEN,
+                    params: {
+                        message: cookieName
+                            ? 'Missing session cookie: send request with credentials: "include" so the cookie is sent, or pass externalAccessToken in the request body or Authorization: Bearer header'
+                            : 'Missing externalAccessToken in body or Authorization: Bearer header',
+                    },
+                })
+            }
+            req.log.info(
+                { name: 'managed-authn', fromCookie: !!tokenFromCookie, fromHeader: !!tokenFromHeader },
+                'POST /external-token received',
+            )
+            try {
+                const response = await managedAuthnService(req.log).externalToken({
+                    externalAccessToken: externalAccessToken as string,
+                })
+                applicationEvents(req.log).sendUserEvent(req, {
+                    action: ApplicationEventName.USER_SIGNED_UP,
+                    data: {
+                        source: 'managed',
+                    },
+                })
+                return response
+            } catch (e) {
+                if (e instanceof ActivepiecesError) throw e
+                req.log.error({ err: e }, 'managed-authn external-token failed')
+                const isEntityNotFound = e != null && typeof e === 'object' &&
+                    ((e as Error).name === 'EntityNotFoundError' || (e as Error).constructor?.name === 'EntityNotFoundError')
+                if (isEntityNotFound) {
+                    throw new ActivepiecesError({
+                        code: ErrorCode.ENTITY_NOT_FOUND,
+                        params: { message: 'User or project setup incomplete for embed auth', entityType: 'UserIdentity', entityId: '' },
+                    })
+                }
+                throw new ActivepiecesError({
+                    code: ErrorCode.INVALID_BEARER_TOKEN,
+                    params: { message: 'Embed authentication failed' },
+                })
+            }
         },
     )
 }

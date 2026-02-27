@@ -5,12 +5,22 @@ import { FastifyBaseLogger } from 'fastify'
 import { JwtSignAlgorithm, jwtUtils } from '../../../helper/jwt-utils'
 import { projectRoleService } from '../../projects/project-role/project-role.service'
 import { signingKeyService } from '../../signing-key/signing-key-service'
+import { isNeutrinoGatewayEnabled, validateTokenViaNeutrinoGateway } from './neutrino-gateway-validator'
 
 const ALGORITHM = JwtSignAlgorithm.RS256
 
 export const externalTokenExtractor = (log: FastifyBaseLogger) => {
     return {
         async extract(token: string): Promise<ExternalPrincipal> {
+            const gatewayEnabled = isNeutrinoGatewayEnabled()
+            log.info({ name: 'ExternalTokenExtractor', gatewayEnabled }, gatewayEnabled ? 'Neutrino gateway enabled, validating token via gateway' : 'Neutrino gateway disabled, using JWT/signing-key path')
+            if (gatewayEnabled) {
+                const principal = await validateTokenViaNeutrinoGateway(log, token)
+                if (principal) {
+                    return principal
+                }
+            }
+
             const decoded = jwtUtils.decode<ExternalTokenPayload>({ jwt: token })
 
             const signingKeyId = decoded?.header?.kid

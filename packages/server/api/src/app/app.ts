@@ -4,7 +4,7 @@ import { AppSystemProp, exceptionHandler, rejectedPromiseHandler } from '@active
 import { ApEdition, ApEnvironment, AppConnectionWithoutSensitiveData, Flow, FlowRun, Folder, ProjectRelease, ProjectWithLimits, spreadIfDefined, Template, UserInvitation, UserWithMetaInformation } from '@activepieces/shared'
 import swagger from '@fastify/swagger'
 import { createAdapter } from '@socket.io/redis-adapter'
-import { FastifyInstance, FastifyRequest, HTTPMethods } from 'fastify'
+import { FastifyInstance, FastifyRequest } from 'fastify'
 import fastifySocketIO from 'fastify-socket'
 import { Socket } from 'socket.io'
 import { aiProviderService } from './ai/ai-provider-service'
@@ -163,20 +163,7 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
         // eslint-disable-next-line
         reply.header('x-request-id', request.id)
     })
-    app.addHook('onRequest', async (request, reply) => {
-        const route = app.hasRoute({
-            method: request.method as HTTPMethods,
-            url: request.routeOptions.url!,
-        })
-        if (!route) {
-            return reply.code(404).send({
-                statusCode: 404,
-                error: 'Not Found',
-                message: 'Route not found',
-            })
-        }
-    })
-
+    // Note: Do not use onRequest for route checks - routeOptions is not set until after matching (use preHandler or setNotFoundHandler for 404)
     app.addHook('preHandler', authenticationMiddleware)
     app.addHook('preHandler', authorizationMiddleware)
     app.addHook('preHandler', rbacMiddleware)
@@ -326,6 +313,7 @@ export const setupApp = async (app: FastifyInstance): Promise<FastifyInstance> =
         case ApEdition.COMMUNITY:
             await app.register(projectModule)
             await app.register(communityPiecesModule)
+            await app.register(managedAuthnModule)
             await app.register(queueMetricsModule)
             break
     }

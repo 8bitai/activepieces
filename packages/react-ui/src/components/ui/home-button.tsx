@@ -1,8 +1,7 @@
 import { t } from 'i18next';
-import { ChevronLeft } from 'lucide-react';
+import { ChevronLeft, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
-import { flagsHooks } from '@/hooks/flags-hooks';
 import { authenticationSession } from '@/lib/authentication-session';
 import { ActivepiecesClientEventName } from 'ee-embed-sdk';
 
@@ -35,7 +34,6 @@ const HomeButtonWrapper = ({ children }: { children: React.ReactNode }) => {
 };
 const HomeButton = () => {
   const { embedState } = useEmbedding();
-  const branding = flagsHooks.useWebsiteBranding();
   const showBackButton = embedState.homeButtonIcon === 'back';
   return (
     <>
@@ -48,14 +46,11 @@ const HomeButton = () => {
                 size={'icon'}
                 className={showBackButton ? 'size-8' : 'size-10'}
               >
-                {!showBackButton && (
-                  <img
-                    className="h-5 w-5 object-contain"
-                    src={branding.logos.logoIconUrl}
-                    alt={branding.websiteName}
-                  />
+                {showBackButton ? (
+                  <ChevronLeft className="h-4 w-4" />
+                ) : (
+                  <LayoutDashboard className="h-5 w-5" />
                 )}
-                {showBackButton && <ChevronLeft className="h-4 w-4" />}
               </Button>
             </TooltipTrigger>
           </HomeButtonWrapper>

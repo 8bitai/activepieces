@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 import { Navigate, useParams, useLocation } from 'react-router-dom';
 
 import { PageTitle } from '@/app/components/page-title';
@@ -13,10 +14,21 @@ import { TemplateType, isNil } from '@activepieces/shared';
 const TemplateDetailsWrapper = () => {
   const { templateId } = useParams<{ templateId: string }>();
   const location = useLocation();
-  const { data: template, isLoading } = templatesHooks.useTemplate(templateId!);
+  const { t } = useTranslation();
+  const { data: template, isLoading, isError } = templatesHooks.useTemplate(templateId!);
 
   if (isLoading) {
     return <LoadingScreen />;
+  }
+
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center gap-4 p-8 text-center h-screen">
+        <p className="text-muted-foreground">
+          {t('Template could not be loaded.')}
+        </p>
+      </div>
+    );
   }
 
   if (!template) {

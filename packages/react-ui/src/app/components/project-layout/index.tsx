@@ -45,7 +45,8 @@ export function ProjectDashboardLayout({
   const { t } = useTranslation();
   const location = useLocation();
   const isPlatformPage = location.pathname.includes('/platform/');
-  const isEmbedded = useEmbedding().embedState.isEmbedded;
+  const { embedState } = useEmbedding();
+  const isEmbedded = embedState.isEmbedded;
   if (isNil(currentProjectId) || currentProjectId === '') {
     return <Navigate to="/sign-in" replace />;
   }
@@ -78,10 +79,12 @@ export function ProjectDashboardLayout({
     itemsWithoutHeader.some((item) => location.pathname.includes(item.to)) ||
     isPlatformPage;
 
+  const showLeftSidebar = !isEmbedded || !embedState.hideSideNav;
+
   return (
     <ProjectChangedRedirector currentProjectId={currentProjectId}>
       <SidebarProvider hoverMode={true}>
-        {!isEmbedded && <ProjectDashboardSidebar />}
+        {showLeftSidebar && <ProjectDashboardSidebar />}
         <SidebarInset className={`relative overflow-auto gap-4`}>
           <div className="flex flex-col">
             {!hideHeader && (
