@@ -16,6 +16,14 @@ function getTokenFromCookie(cookieHeader: string | undefined, cookieName: string
     return null
 }
 
+function getTokenFromAuthHeader(authHeader: string | undefined): string | null {
+    if (!authHeader?.trim()) return null
+    const parts = authHeader.trim().split(/\s+/)
+    if (parts.length === 2 && parts[0].toLowerCase() === 'bearer')
+        return parts[1].trim() || null
+    return null
+}
+
 export const managedAuthnController: FastifyPluginAsyncTypebox = async (
     app,
 ) => {
@@ -25,21 +33,26 @@ export const managedAuthnController: FastifyPluginAsyncTypebox = async (
         async (req): Promise<AuthenticationResponse> => {
             const cookieName = system.get(AppSystemProp.EMBED_SESSION_COOKIE_NAME)
             const tokenFromCookie = cookieName ? getTokenFromCookie(req.headers.cookie, cookieName) : null
-            // Prefer cookie when present; otherwise allow body token (e.g. cross-origin embed where cookie isn't sent).
+            const tokenFromHeader = getTokenFromAuthHeader(req.headers.authorization)
+            // Prefer cookie, then body, then Authorization header (e.g. parent proxy or SDK sending Bearer).
             const externalAccessToken =
                 (tokenFromCookie ?? '').trim() ||
-                (req.body?.externalAccessToken ?? '').trim()
+                (req.body?.externalAccessToken ?? '').trim() ||
+                (tokenFromHeader ?? '').trim()
             if (!externalAccessToken) {
                 throw new ActivepiecesError({
                     code: ErrorCode.INVALID_BEARER_TOKEN,
                     params: {
                         message: cookieName
-                            ? 'Missing session cookie: send request with credentials: "include" so the cookie is sent, or pass externalAccessToken in the request body'
-                            : 'Missing externalAccessToken in body',
+                            ? 'Missing session cookie: send request with credentials: "include" so the cookie is sent, or pass externalAccessToken in the request body or Authorization: Bearer header'
+                            : 'Missing externalAccessToken in body or Authorization: Bearer header',
                     },
                 })
             }
-            req.log.info({ name: 'managed-authn', fromCookie: !!tokenFromCookie }, 'POST /external-token received')
+            req.log.info(
+                { name: 'managed-authn', fromCookie: !!tokenFromCookie, fromHeader: !!tokenFromHeader },
+                'POST /external-token received',
+            )
             try {
                 const response = await managedAuthnService(req.log).externalToken({
                     externalAccessToken: externalAccessToken as string,
