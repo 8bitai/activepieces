@@ -132,9 +132,16 @@ async function resolveProperties(
             throw error
         })
 
+        const extracted = output as Record<string, unknown>
+        for (const detail of propertyDetails) {
+            if (detail.options && detail.options.length > 0 && detail.name in extracted) {
+                extracted[detail.name] = matchDropdownValue(extracted[detail.name], detail.options)
+            }
+        }
+
         result = {
             ...result,
-            ...(output as Record<string, unknown>),
+            ...extracted,
         }
 
     }
@@ -142,45 +149,56 @@ async function resolveProperties(
 }
 
 async function execute(operation: ExecuteToolOperationWithModel): Promise<ExecuteToolResponse> {
-
-    const { pieceAction } = await pieceLoader.getPieceAndActionOrThrow({
-        pieceName: operation.pieceName,
-        pieceVersion: operation.pieceVersion,
-        actionName: operation.actionName,
-        devPieces: EngineConstants.DEV_PIECES,
-    })
-    const depthToPropertyMap = tsort.sortPropertiesByDependencies(pieceAction.props)
-    const resolvedInput = await resolveProperties(depthToPropertyMap, operation.instruction, pieceAction, operation.model, operation)
-    const step: PieceAction = {
-        name: operation.actionName,
-        displayName: operation.actionName,
-        type: FlowActionType.PIECE,
-        settings: {
-            input: resolvedInput,
-            actionName: operation.actionName,
+    try {
+        const { pieceAction } = await pieceLoader.getPieceAndActionOrThrow({
             pieceName: operation.pieceName,
             pieceVersion: operation.pieceVersion,
-            propertySettings: Object.fromEntries(Object.entries(resolvedInput).map(([key]) => [key, {
-                type: PropertyExecutionType.MANUAL,
-                schema: undefined,
-            }])),
-        },
-        valid: true,
+            actionName: operation.actionName,
+            devPieces: EngineConstants.DEV_PIECES,
+        })
+        const depthToPropertyMap = tsort.sortPropertiesByDependencies(pieceAction.props)
+        const resolvedInput = await resolveProperties(depthToPropertyMap, operation.instruction, pieceAction, operation.model, operation)
+        const step: PieceAction = {
+            name: operation.actionName,
+            displayName: operation.actionName,
+            type: FlowActionType.PIECE,
+            settings: {
+                input: resolvedInput,
+                actionName: operation.actionName,
+                pieceName: operation.pieceName,
+                pieceVersion: operation.pieceVersion,
+                propertySettings: Object.fromEntries(Object.entries(resolvedInput).map(([key]) => [key, {
+                    type: PropertyExecutionType.MANUAL,
+                    schema: undefined,
+                }])),
+            },
+            valid: true,
+        }
+        const output = await flowExecutor.getExecutorForAction(step.type).handle({
+            action: step,
+            executionState: FlowExecutorContext.empty(),
+            constants: EngineConstants.fromExecuteActionInput(operation),
+        })
+        const { output: stepOutput, errorMessage, status } = output.steps[operation.actionName]
+        return {
+            status: status === StepOutputStatus.FAILED ? ExecutionToolStatus.FAILED : ExecutionToolStatus.SUCCESS,
+            output: stepOutput,
+            resolvedInput: {
+                ...resolvedInput,
+                auth: 'Redacted',
+            },
+            errorMessage,
+        }
     }
-    const output = await flowExecutor.getExecutorForAction(step.type).handle({
-        action: step,
-        executionState: FlowExecutorContext.empty(),
-        constants: EngineConstants.fromExecuteActionInput(operation),
-    })
-    const { output: stepOutput, errorMessage, status } = output.steps[operation.actionName]
-    return {
-        status: status === StepOutputStatus.FAILED ? ExecutionToolStatus.FAILED : ExecutionToolStatus.SUCCESS,
-        output: stepOutput,
-        resolvedInput: {
-            ...resolvedInput,
-            auth: 'Redacted',
-        },
-        errorMessage,
+    catch (error) {
+        const errorMessage = error instanceof Error ? error.message : String(error)
+        console.error('[agent-tool-execute] Tool execution failed:', errorMessage, error instanceof Error ? error.stack : '')
+        return {
+            status: ExecutionToolStatus.FAILED,
+            output: undefined,
+            resolvedInput: {},
+            errorMessage: `Tool execution error: ${errorMessage}`,
+        }
     }
 }
 
@@ -229,6 +247,45 @@ ${propertyDetailsSection}
 `
 }
 
+async function loadDropdownLabels(propertyName: string, property: PieceProperty, operation: ExecuteToolOperation, resolvedInput: Record<string, unknown>): Promise<string[]> {
+    try {
+        let options: DropdownOption<unknown>[] = []
+        if (property.type === PropertyType.STATIC_DROPDOWN || property.type === PropertyType.STATIC_MULTI_SELECT_DROPDOWN) {
+            options = 'options' in property && property.options && typeof property.options === 'object' && 'options' in property.options
+                ? (property.options as { options: DropdownOption<unknown>[] }).options
+                : []
+        } else {
+            options = await loadOptions(propertyName, operation, resolvedInput)
+        }
+        return options.map(o => o.label).filter(l => typeof l === 'string' && l.length > 0)
+    }
+    catch {
+        return []
+    }
+}
+
+function matchDropdownValue(extractedValue: unknown, options: DropdownOption<unknown>[]): unknown {
+    if (options.length === 0) return extractedValue
+    const exact = options.find(o => JSON.stringify(o.value) === JSON.stringify(extractedValue))
+    if (exact) return exact.value
+    const extractedStr = typeof extractedValue === 'string' ? extractedValue : JSON.stringify(extractedValue)
+    const byLabel = options.find(o => o.label.toLowerCase() === extractedStr.toLowerCase())
+    if (byLabel) return byLabel.value
+    const byLabelContains = options.find(o => extractedStr.toLowerCase().includes(o.label.toLowerCase()))
+    if (byLabelContains) return byLabelContains.value
+    if (typeof extractedValue === 'object' && extractedValue !== null) {
+        const extractedObj = extractedValue as Record<string, unknown>
+        for (const option of options) {
+            if (typeof option.value === 'object' && option.value !== null) {
+                const optionObj = option.value as Record<string, unknown>
+                const sharedKey = Object.keys(extractedObj).find(k => k in optionObj && extractedObj[k] === optionObj[k])
+                if (sharedKey) return option.value
+            }
+        }
+    }
+    return options[0].value
+}
+
 type ExecuteToolOperationWithModel = ExecuteToolOperation & {
     model: LanguageModel
 }
@@ -247,7 +304,12 @@ async function propertyToSchema(propertyName: string, property: PieceProperty, o
             break
         case PropertyType.DROPDOWN:
         case PropertyType.STATIC_DROPDOWN: {
-            schema = z.union([z.string(), z.number(), z.object({}).loose()])
+            const optionsForSchema = await loadDropdownLabels(propertyName, property, operation, resolvedInput)
+            if (optionsForSchema.length > 0) {
+                schema = z.enum(optionsForSchema as [string, ...string[]])
+            } else {
+                schema = z.union([z.string(), z.number(), z.object({}).loose()])
+            }
             break
         }
         case PropertyType.MULTI_SELECT_DROPDOWN:
@@ -298,11 +360,60 @@ async function buildDynamicSchema(propertyName: string, operation: ExecuteToolOp
         searchValue: undefined,
     }) as unknown as ExecutePropsResult<PropertyType.DYNAMIC>
     const dynamicProperties = response.options
+    if (!dynamicProperties || typeof dynamicProperties !== 'object' || 'disabled' in dynamicProperties) {
+        return z.object({}).loose()
+    }
     const dynamicSchema: Record<string, z.ZodTypeAny> = {}
     for (const [key, value] of Object.entries(dynamicProperties)) {
-        dynamicSchema[key] = await propertyToSchema(key, value, operation, resolvedInput)
+        if (!value || typeof value !== 'object' || !('type' in value)) continue
+        let schema = await propertyToSchema(key, value, operation, resolvedInput)
+        if (value.defaultValue != null && (value.type === PropertyType.OBJECT || value.type === PropertyType.JSON)) {
+            const schemaFromDefault = tryBuildSchemaFromDefault(value.defaultValue)
+            if (schemaFromDefault) {
+                schema = schemaFromDefault
+            } else {
+                const hint = typeof value.defaultValue === 'string' ? value.defaultValue : JSON.stringify(value.defaultValue)
+                schema = schema.describe(`Expected structure: ${hint}`)
+            }
+        }
+        dynamicSchema[key] = schema
     }
-    return z.object(dynamicSchema)
+    return z.object(dynamicSchema).loose()
+}
+
+function tryBuildSchemaFromDefault(defaultValue: unknown): z.ZodTypeAny | null {
+    if (typeof defaultValue !== 'object' || defaultValue === null) return null
+    const schema = defaultValue as Record<string, unknown>
+    if (schema.type !== 'object' || typeof schema.properties !== 'object' || schema.properties === null) return null
+    const properties = schema.properties as Record<string, { type?: string; description?: string }>
+    const requiredFields = Array.isArray(schema.required) ? schema.required as string[] : []
+    const shape: Record<string, z.ZodTypeAny> = {}
+    for (const [fieldName, fieldDef] of Object.entries(properties)) {
+        let fieldSchema: z.ZodTypeAny
+        switch (fieldDef.type) {
+            case 'number':
+            case 'integer':
+                fieldSchema = z.number()
+                break
+            case 'boolean':
+                fieldSchema = z.boolean()
+                break
+            case 'array':
+                fieldSchema = z.array(z.unknown())
+                break
+            default:
+                fieldSchema = z.string()
+                break
+        }
+        if (fieldDef.description) {
+            fieldSchema = fieldSchema.describe(fieldDef.description)
+        }
+        if (!requiredFields.includes(fieldName)) {
+            fieldSchema = fieldSchema.nullable()
+        }
+        shape[fieldName] = fieldSchema
+    }
+    return z.object(shape).loose()
 }
 
 type PropertyDetail = {
@@ -322,10 +433,21 @@ async function buildPropertyDetail(propertyName: string, property: PieceProperty
     }
 
     if (
-        property.type === PropertyType.DROPDOWN ||
-        property.type === PropertyType.MULTI_SELECT_DROPDOWN ||
         property.type === PropertyType.STATIC_DROPDOWN ||
         property.type === PropertyType.STATIC_MULTI_SELECT_DROPDOWN
+    ) {
+        const staticOptions = 'options' in property && property.options && typeof property.options === 'object' && 'options' in property.options
+            ? (property.options as { options: DropdownOption<unknown>[] }).options
+            : []
+        return {
+            ...baseDetail,
+            options: staticOptions,
+        }
+    }
+
+    if (
+        property.type === PropertyType.DROPDOWN ||
+        property.type === PropertyType.MULTI_SELECT_DROPDOWN
     ) {
         const options = await loadOptions(propertyName, operation, input)
         return {
@@ -365,6 +487,10 @@ function buildPropertyDetailsSection(propertyDetails: PropertyDetail[]): string 
         }
         if (detail.options && detail.options.length > 0) {
             content += `\n  Options: ${JSON.stringify(detail.options, null, 2)}`
+        }
+        if (detail.defaultValue !== undefined) {
+            const defaultStr = typeof detail.defaultValue === 'string' ? detail.defaultValue : JSON.stringify(detail.defaultValue, null, 2)
+            content += `\n  Expected Schema/Default: ${defaultStr}`
         }
         return content
     }).join('\n\n')

@@ -55,7 +55,7 @@ export const response = createAction({
     return context.propsValue.response['response'];
   },
   async run(context) {
-    const response = context.propsValue.response['response'];
+    const responseData = context.propsValue.response['response'];
     const callbackUrl = await context.store.get<string>(callableFlowKey(context.run.id), StoreScope.FLOW);
     const isNotTestFlow = callbackUrl !== MOCK_CALLBACK_IN_TEST_FLOW_URL;
     if (isNotTestFlow && !isNil(callbackUrl)) {
@@ -64,11 +64,22 @@ export const response = createAction({
         url: callbackUrl,
         body: {
           status: 'success',
-          data: response
+          data: responseData
         },
         retries: 10,
       });
     }
-    return response;
+    // When invoked via sync webhook (e.g. Run Agent flow tool), there is no callbackUrl.
+    // Send the response via the engine's respond hook so the sync listener receives it.
+    if (isNil(callbackUrl) && typeof context.run.respond === 'function') {
+      context.run.respond({
+        response: {
+          status: 200,
+          body: responseData,
+          headers: {},
+        },
+      });
+    }
+    return responseData;
   },
 });

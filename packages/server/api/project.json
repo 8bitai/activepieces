@@ -44,7 +44,8 @@
       "executor": "@nx/js:node",
       "options": {
         "buildTarget": "server-api:build",
-        "host": "0.0.0.0"
+        "host": "0.0.0.0",
+        "runtimeArgs": ["--max-old-space-size=8192"]
       },
       "configurations": {
         "production": {

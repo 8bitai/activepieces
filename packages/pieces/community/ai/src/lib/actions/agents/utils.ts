@@ -96,27 +96,36 @@ export const agentUtils = {
       return !isNil(populatedFlow) ? { ...tool, flow: populatedFlow } : undefined
     }).filter(tool => !isNil(tool));
 
+    const SUBFLOWS_PIECE_NAME = '@activepieces/piece-subflows'
+    const CALLABLE_FLOW_TRIGGER_NAME = 'callableFlow'
+
     const flowsToolsList = await Promise.all(flowToolsWithPopulatedFlows.map(async (tool) => {
       const triggerSettings = tool.flow.version.trigger.settings as McpTrigger
-      const toolDescription = triggerSettings.input?.toolDescription
-      const returnsResponse = triggerSettings.input?.returnsResponse
+      const isCallableFlowTrigger = triggerSettings.pieceName === SUBFLOWS_PIECE_NAME &&
+        triggerSettings.triggerName === CALLABLE_FLOW_TRIGGER_NAME
+      const toolDescription = triggerSettings.input?.toolDescription ?? tool.flow.version.displayName
+      const returnsResponse = isCallableFlowTrigger ? true : (triggerSettings.input?.returnsResponse ?? false)
 
-      const inputSchema = Object.fromEntries(
-        triggerSettings.input?.inputSchema.map(prop => [
+      const inputSchemaShape = Object.fromEntries(
+        (triggerSettings.input?.inputSchema ?? []).map((prop: McpProperty) => [
           fixProperty(prop.name),
           mcpPropertyToSchema(prop),
         ]),
       )
+      const inputSchema = Object.keys(inputSchemaShape).length > 0
+        ? z.object(inputSchemaShape)
+        : z.record(z.string(), z.unknown())
       return {
         name: tool.toolName,
         description: toolDescription,
-        inputSchema: z.object(inputSchema),
-        execute: async (_inputs: unknown) => {
+        inputSchema,
+        execute: async (inputs: unknown) => {
           return callMcpFlowTool({
             flowId: tool.flow.id,
             publicUrl: params.publicUrl,
             token: params.token,
-            async: !returnsResponse
+            async: !returnsResponse,
+            inputs: inputs as Record<string, unknown>,
           })
         }
       }
@@ -143,12 +152,15 @@ async function callMcpFlowTool(params: CallMcpFlowToolParams): Promise<ExecuteTo
       type: AuthenticationType.BEARER_TOKEN,
       token: params.token,
     },
+    body: {
+      data: params.inputs,
+    },
   });
 
   return {
     status: isOkSuccess(response.status) ? ExecutionToolStatus.SUCCESS : ExecutionToolStatus.FAILED,
     output: response.body,
-    resolvedInput: {},
+    resolvedInput: params.inputs ?? {},
     errorMessage: !isOkSuccess(response.status) ? 'Error' : undefined,
   }
 }
@@ -200,4 +212,5 @@ type CallMcpFlowToolParams = {
   token: string;
   publicUrl: string;
   async: boolean;
+  inputs?: Record<string, unknown>;
 }
