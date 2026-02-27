@@ -116,30 +116,31 @@ export const callFlow = createAction({
       externalId: context.propsValue.flow?.externalId,
     });
 
-    const response = await httpClient.sendRequest<CallableFlowRequest>({
+    const waitForResponse = context.propsValue.waitForResponse;
+    const baseUrl = `${context.server.apiUrl}v1/webhooks/${flow?.id}`;
+    const url = waitForResponse ? `${baseUrl}/sync` : baseUrl;
+
+    const response = await httpClient.sendRequest<CallableFlowRequest | CallableFlowResponse>({
       method: HttpMethod.POST,
-      url: `${context.server.apiUrl}v1/webhooks/${flow?.id}`,
+      url,
       headers: {
         'Content-Type': 'application/json',
         [PARENT_RUN_ID_HEADER]: context.run.id,
-        [FAIL_PARENT_ON_FAILURE_HEADER]: context.propsValue.waitForResponse ? 'true' : 'false',
+        [FAIL_PARENT_ON_FAILURE_HEADER]: waitForResponse ? 'true' : 'false',
       },
-      body: {
-        data: payload,
-        callbackUrl: context.propsValue.waitForResponse ?  context.generateResumeUrl({
-          queryParams: {}
-        }) : undefined,
-      },
+      body: { data: payload },
     });
-    if (context.propsValue.waitForResponse) {
-      context.run.pause({
-        pauseMetadata: {
-          type: PauseType.WEBHOOK,
-          response: {},
-        }
-      })
+
+    if (waitForResponse) {
+      const runResponse = response.body as { status?: number; body?: unknown; headers?: unknown };
+      const ok = runResponse?.status != null && runResponse.status >= 200 && runResponse.status < 300;
+      return {
+        status: ok ? 'success' : 'error',
+        data: runResponse?.body ?? runResponse,
+      };
     }
-    return response.body;
+
+    return response.body as Record<string, unknown>;
   },
   errorHandlingOptions: {
     continueOnFailure: {
