@@ -1,0 +1,140 @@
+{
+  "name": "Zendesk Get Ticket",
+  "type": "SHARED",
+  "summary": "Fetch a Zendesk ticket by ID via MCP.",
+  "description": "A callable workflow that accepts a Zendesk ticket ID, calls the MCP zendesk_get_ticket tool to retrieve ticket details, and returns the ticket data. Use this as a subflow in orchestrator workflows.",
+  "tags": [],
+  "author": "Kumara Shivanand",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-subflows"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "bR4nFjW8uZ6qXmCpLtK0s"
+  },
+  "flows": [
+    {
+      "displayName": "zendesk_get_ticket",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Callable Flow",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "pieceName": "@activepieces/piece-subflows",
+          "pieceVersion": "0.4.10",
+          "triggerName": "callableFlow",
+          "sampleData": {},
+          "input": {
+            "mode": "advanced",
+            "exampleData": {
+              "sampleData": {
+                "type": "object",
+                "required": [
+                  "ticket_id"
+                ],
+                "properties": {
+                  "ticket_id": {
+                    "type": "string",
+                    "description": "Zendesk ticket ID to retrieve"
+                  }
+                }
+              }
+            }
+          },
+          "propertySettings": {
+            "mode": {
+              "type": "MANUAL"
+            },
+            "exampleData": {
+              "type": "MANUAL",
+              "schema": {
+                "sampleData": {
+                  "type": "JSON",
+                  "required": true,
+                  "displayName": "Sample Data"
+                }
+              }
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "CODE",
+          "valid": true,
+          "displayName": "Call MCP",
+          "settings": {
+            "input": {
+              "ticket_id": "{{trigger.ticket_id}}"
+            },
+            "sampleData": {},
+            "sourceCode": {
+              "code": "export const code = async (inputs) => {\n  const args = { ticket_id: inputs.ticket_id };\n  const response = await fetch('https://arlena-purplish-chuck.ngrok-free.dev/mcp', {\n    method: 'POST',\n    headers: {\n      'Content-Type': 'application/json',\n      'Accept': 'application/json',\n      'ngrok-skip-browser-warning': 'true'\n    },\n    body: JSON.stringify({\n      jsonrpc: '2.0',\n      id: 1,\n      method: 'tools/call',\n      params: { name: 'zendesk_get_ticket', arguments: args }\n    })\n  });\n  const data = await response.json();\n  return data.result || data;\n};",
+              "packageJson": "{}"
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_return",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "displayName": "Return Response",
+            "settings": {
+              "pieceName": "@activepieces/piece-subflows",
+              "actionName": "returnResponse",
+              "pieceVersion": "0.4.10",
+              "sampleData": {},
+              "input": {
+                "mode": "advanced",
+                "response": {
+                  "response": {
+                    "tool": "zendesk_get_ticket",
+                    "success": true,
+                    "ticket": "{{Call_MCP.result}}"
+                  }
+                }
+              },
+              "propertySettings": {
+                "mode": {
+                  "type": "MANUAL"
+                },
+                "response": {
+                  "type": "MANUAL",
+                  "schema": {
+                    "response": {
+                      "type": "JSON",
+                      "required": true,
+                      "displayName": "Response"
+                    }
+                  }
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}
