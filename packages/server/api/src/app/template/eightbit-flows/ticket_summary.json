@@ -1,0 +1,199 @@
+{
+  "name": "Ticket Summary",
+  "type": "SHARED",
+  "summary": "Generate an AI summary of a Zendesk ticket.",
+  "description": "A callable workflow that fetches a Zendesk ticket by ID and uses AI to generate a concise summary including the issue details, current status, and recommended next action for the support agent.",
+  "tags": [],
+  "author": "Kumara Shivanand",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-subflows",
+    "@activepieces/piece-ai"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "jM5pKnLqRs8vWxYdCeH7b"
+  },
+  "flows": [
+    {
+      "displayName": "ticket_summary",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Callable Flow",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "pieceName": "@activepieces/piece-subflows",
+          "pieceVersion": "0.4.10",
+          "triggerName": "callableFlow",
+          "sampleData": {},
+          "input": {
+            "mode": "advanced",
+            "exampleData": {
+              "sampleData": {
+                "type": "object",
+                "required": [
+                  "ticket_id"
+                ],
+                "properties": {
+                  "ticket_id": {
+                    "type": "string",
+                    "description": "ID of the ticket to summarize"
+                  }
+                }
+              }
+            }
+          },
+          "propertySettings": {
+            "mode": {
+              "type": "MANUAL"
+            },
+            "exampleData": {
+              "type": "MANUAL",
+              "schema": {
+                "sampleData": {
+                  "type": "JSON",
+                  "required": true,
+                  "displayName": "Sample Data"
+                }
+              }
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "CODE",
+          "valid": true,
+          "displayName": "Fetch Ticket",
+          "settings": {
+            "input": {
+              "ticket_id": "{{trigger.ticket_id}}"
+            },
+            "sampleData": {},
+            "sourceCode": {
+              "code": "export const code = async (inputs) => {\n  const args = { ticket_id: inputs.ticket_id };\n  const response = await fetch('https://arlena-purplish-chuck.ngrok-free.dev/mcp', {\n    method: 'POST',\n    headers: {\n      'Content-Type': 'application/json',\n      'Accept': 'application/json',\n      'ngrok-skip-browser-warning': 'true'\n    },\n    body: JSON.stringify({\n      jsonrpc: '2.0',\n      id: 1,\n      method: 'tools/call',\n      params: { name: 'zendesk_get_ticket', arguments: args }\n    })\n  });\n  const data = await response.json();\n  return data.result || data;\n};",
+              "packageJson": "{}"
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_2",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "displayName": "Summarize Ticket",
+            "settings": {
+              "pieceName": "@activepieces/piece-ai",
+              "actionName": "askAi",
+              "pieceVersion": "0.1.5",
+              "sampleData": {},
+              "input": {
+                "model": "azure/gpt-4.1",
+                "prompt": "You are a customer support assistant. A support agent needs a quick summary of this Zendesk ticket.\n\nTicket Data: {{Fetch_Ticket.result}}\n\nProvide exactly:\n1. Issue Summary (2-3 sentences \u2014 what is the customer's problem?)\n2. Current Status (one line)\n3. Recommended Next Action (one clear sentence)\n\nBe concise and actionable.",
+                "provider": "activepieces",
+                "webSearch": false,
+                "creativity": 100,
+                "maxOutputTokens": 2000,
+                "webSearchOptions": {}
+              },
+              "propertySettings": {
+                "model": {
+                  "type": "MANUAL"
+                },
+                "prompt": {
+                  "type": "MANUAL"
+                },
+                "provider": {
+                  "type": "MANUAL"
+                },
+                "webSearch": {
+                  "type": "MANUAL"
+                },
+                "creativity": {
+                  "type": "MANUAL"
+                },
+                "conversationKey": {
+                  "type": "MANUAL"
+                },
+                "maxOutputTokens": {
+                  "type": "MANUAL"
+                },
+                "webSearchOptions": {
+                  "type": "MANUAL",
+                  "schema": {}
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "nextAction": {
+              "name": "step_return",
+              "skip": false,
+              "type": "PIECE",
+              "valid": true,
+              "displayName": "Return Response",
+              "settings": {
+                "pieceName": "@activepieces/piece-subflows",
+                "actionName": "returnResponse",
+                "pieceVersion": "0.4.10",
+                "sampleData": {},
+                "input": {
+                  "mode": "advanced",
+                  "response": {
+                    "response": {
+                      "tool": "ticket_summary",
+                      "success": true,
+                      "ticket_id": "{{trigger.ticket_id}}",
+                      "summary": "{{Summarize_Ticket.response}}"
+                    }
+                  }
+                },
+                "propertySettings": {
+                  "mode": {
+                    "type": "MANUAL"
+                  },
+                  "response": {
+                    "type": "MANUAL",
+                    "schema": {
+                      "response": {
+                        "type": "JSON",
+                        "required": true,
+                        "displayName": "Response"
+                      }
+                    }
+                  }
+                },
+                "errorHandlingOptions": {
+                  "retryOnFailure": {
+                    "value": false
+                  },
+                  "continueOnFailure": {
+                    "value": false
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}

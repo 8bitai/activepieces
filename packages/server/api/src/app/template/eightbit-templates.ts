@@ -12,9 +12,13 @@ import {
 //   2. Export it  (3-dot menu → "Download as template" / "Export")
 //   3. Save the downloaded .json file into this folder  (eightbit-flows/)
 //   4. Add an import below and a fromSharedTemplate(...) entry in TEMPLATES
-import inputToOutput from './eightbit-flows/input-to-output.json'
-import textInTextOut from './eightbit-flows/text-in-text-out.json'
-import dataPassthrough from './eightbit-flows/data-passthrough.json'
+import zendeskGetTicket from './eightbit-flows/zendesk_get_ticket.json'
+import zendeskListOpenTickets from './eightbit-flows/zendesk_list_open_tickets.json'
+import ticketSummary from './eightbit-flows/ticket_summary.json'
+import zendeskGetUsers from './eightbit-flows/zendesk_get_users.json'
+import zendeskListUrgentTickets from './eightbit-flows/zendesk_list_urgent_tickets.json'
+import zendeskUpdateTicket from './eightbit-flows/zendesk_update_ticket.json'
+import escalationHandler from './eightbit-flows/escalation_handler.json'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CATEGORY_8BIT_TEMPLATES = '8bit_templates'
@@ -52,9 +56,13 @@ function fromSharedTemplate(id: string, data: SharedTemplate): Template {
 
 // ─── Registered templates ─────────────────────────────────────────────────────
 const TEMPLATES: Template[] = [
-    fromSharedTemplate('input-to-output', inputToOutput as unknown as SharedTemplate),
-    fromSharedTemplate('text-in-text-out', textInTextOut as unknown as SharedTemplate),
-    fromSharedTemplate('data-passthrough', dataPassthrough as unknown as SharedTemplate),
+    fromSharedTemplate('zendesk_get_ticket', zendeskGetTicket as unknown as SharedTemplate),
+    fromSharedTemplate('zendesk_list_open_tickets', zendeskListOpenTickets as unknown as SharedTemplate),
+    fromSharedTemplate('ticket_summary', ticketSummary as unknown as SharedTemplate),
+    fromSharedTemplate('zendesk_get_users', zendeskGetUsers as unknown as SharedTemplate),
+    fromSharedTemplate('zendesk_list_urgent_tickets', zendeskListUrgentTickets as unknown as SharedTemplate),
+    fromSharedTemplate('zendesk_update_ticket', zendeskUpdateTicket as unknown as SharedTemplate),
+    fromSharedTemplate('escalation_handler', escalationHandler as unknown as SharedTemplate),
 ]
 // ─────────────────────────────────────────────────────────────────────────────
 

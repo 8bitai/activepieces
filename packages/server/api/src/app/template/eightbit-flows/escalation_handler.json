@@ -1,0 +1,184 @@
+{
+  "name": "Escalation Handler",
+  "type": "SHARED",
+  "summary": "Generate an AI-powered escalation summary and next steps.",
+  "description": "A callable workflow that accepts a customer name, issue description, and urgency level, then uses AI to produce a brief escalation summary and three suggested next steps for the support team to act on.",
+  "tags": [],
+  "author": "Kumara Shivanand",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-subflows",
+    "@activepieces/piece-ai"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "DQJ3kbhmfQoEwrEp4YGF0"
+  },
+  "flows": [
+    {
+      "displayName": "escalation_handler",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Callable Flow",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "pieceName": "@activepieces/piece-subflows",
+          "pieceVersion": "0.4.10",
+          "triggerName": "callableFlow",
+          "sampleData": {},
+          "input": {
+            "mode": "advanced",
+            "exampleData": {
+              "sampleData": {
+                "type": "object",
+                "required": [
+                  "customer_name",
+                  "issue",
+                  "urgency"
+                ],
+                "properties": {
+                  "customer_name": {
+                    "type": "string",
+                    "description": "Customer's full name"
+                  },
+                  "issue": {
+                    "type": "string",
+                    "description": "Description of the issue"
+                  },
+                  "urgency": {
+                    "type": "string",
+                    "description": "Urgency level: low, medium, high, critical"
+                  }
+                }
+              }
+            }
+          },
+          "propertySettings": {
+            "mode": {
+              "type": "MANUAL"
+            },
+            "exampleData": {
+              "type": "MANUAL",
+              "schema": {
+                "sampleData": {
+                  "type": "JSON",
+                  "required": true,
+                  "displayName": "Sample Data"
+                }
+              }
+            }
+          }
+        },
+        "nextAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "displayName": "Ask AI",
+          "settings": {
+            "pieceName": "@activepieces/piece-ai",
+            "actionName": "askAi",
+            "pieceVersion": "0.1.5",
+            "sampleData": {},
+            "input": {
+              "model": "azure/gpt-4.1",
+              "prompt": "A customer needs escalation to a human agent.\nCustomer: {{trigger.customer_name}}\nIssue: {{trigger.issue}}\nUrgency: {{trigger.urgency}}\n\nWrite a brief escalation summary (2-3 sentences) and 3 suggested next steps for the support team.",
+              "provider": "activepieces",
+              "webSearch": false,
+              "creativity": 100,
+              "maxOutputTokens": 2000,
+              "webSearchOptions": {}
+            },
+            "propertySettings": {
+              "model": {
+                "type": "MANUAL"
+              },
+              "prompt": {
+                "type": "MANUAL"
+              },
+              "provider": {
+                "type": "MANUAL"
+              },
+              "webSearch": {
+                "type": "MANUAL"
+              },
+              "creativity": {
+                "type": "MANUAL"
+              },
+              "conversationKey": {
+                "type": "MANUAL"
+              },
+              "maxOutputTokens": {
+                "type": "MANUAL"
+              },
+              "webSearchOptions": {
+                "type": "MANUAL",
+                "schema": {}
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_return",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "displayName": "Return Response",
+            "settings": {
+              "pieceName": "@activepieces/piece-subflows",
+              "actionName": "returnResponse",
+              "pieceVersion": "0.4.10",
+              "sampleData": {},
+              "input": {
+                "mode": "advanced",
+                "response": {
+                  "response": {
+                    "tool": "escalation_handler",
+                    "success": true,
+                    "message": "Escalated to support team",
+                    "summary": "{{Ask_AI.response}}"
+                  }
+                }
+              },
+              "propertySettings": {
+                "mode": {
+                  "type": "MANUAL"
+                },
+                "response": {
+                  "type": "MANUAL",
+                  "schema": {
+                    "response": {
+                      "type": "JSON",
+                      "required": true,
+                      "displayName": "Response"
+                    }
+                  }
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            }
+          }
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}
