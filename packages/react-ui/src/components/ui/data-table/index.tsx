@@ -56,7 +56,7 @@ type DataTableAction<TData extends DataWithId> = (
   row: RowDataWithActions<TData>,
 ) => JSX.Element;
 
-type ColumnDef<TData, TValue> = TanstackColumnDef<TData, TValue> & {
+export type ColumnDef<TData, TValue> = TanstackColumnDef<TData, TValue> & {
   notClickable?: boolean;
 };
 

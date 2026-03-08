@@ -14,6 +14,10 @@ export const ListFlowRunsRequestQuery = Type.Object({
     failedStepName: Type.Optional(Type.String({})),
     flowRunIds: Type.Optional(Type.Array(ApId)),
     includeArchived: Type.Optional(Type.Boolean({})),
+    /** When true, return only top-level runs (no parentRunId). Use for runs table to show orchestrator runs only. */
+    parentRunIdOnly: Type.Optional(Type.Boolean({})),
+    /** When set, return only child runs of this flow run. Use to list subflows called by a run. */
+    parentRunId: Type.Optional(ApId),
 })
 
 export type ListFlowRunsRequestQuery = Static<typeof ListFlowRunsRequestQuery>

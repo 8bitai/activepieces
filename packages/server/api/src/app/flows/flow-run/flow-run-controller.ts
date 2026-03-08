@@ -42,6 +42,8 @@ export const flowRunController: FastifyPluginAsyncTypebox = async (app) => {
             createdBefore: request.query.createdBefore,
             flowRunIds: request.query.flowRunIds,
             includeArchived: request.query.includeArchived,
+            parentRunIdOnly: request.query.parentRunIdOnly,
+            parentRunId: request.query.parentRunId,
         })
     })
 

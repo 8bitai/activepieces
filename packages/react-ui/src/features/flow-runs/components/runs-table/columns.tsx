@@ -1,4 +1,5 @@
-import { ColumnDef } from '@tanstack/react-table';
+import { ColumnDef } from '@/components/ui/data-table';
+import { useQuery } from '@tanstack/react-query';
 import { t } from 'i18next';
 import {
   Archive,
@@ -9,8 +10,11 @@ import {
   Clock,
   Timer,
   AlertTriangle,
+  GitBranch,
+  ExternalLink,
 } from 'lucide-react';
-import { Dispatch, SetStateAction } from 'react';
+import { Dispatch, SetStateAction, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -30,7 +34,9 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { flowRunsApi } from '@/features/flow-runs/lib/flow-runs-api';
 import { flowRunUtils } from '@/features/flow-runs/lib/flow-run-utils';
+import { authenticationSession } from '@/lib/authentication-session';
 import { formatUtils } from '@/lib/utils';
 import { FlowRun, FlowRunStatus, isNil, SeekPage } from '@activepieces/shared';
 
@@ -47,7 +53,125 @@ type RunsTableColumnsProps = {
   setSelectedAll: Dispatch<SetStateAction<boolean>>;
   excludedRows: Set<string>;
   setExcludedRows: Dispatch<SetStateAction<Set<string>>>;
+  projectId: string;
 };
+
+function FlowsCalledCell({ run, projectId }: { run: FlowRun; projectId: string }) {
+  const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
+  const { data: childRunsPage, isLoading } = useQuery({
+    queryKey: ['flow-run-children', run.id, projectId],
+    queryFn: () =>
+      flowRunsApi.list({
+        projectId,
+        parentRunId: run.id,
+        limit: 100,
+      }),
+    enabled: open,
+  });
+  const childRuns = childRunsPage?.data ?? [];
+  const sortedChildRuns = [...childRuns].sort(
+    (a, b) =>
+      new Date(a.created ?? 0).getTime() - new Date(b.created ?? 0).getTime(),
+  );
+  const count = sortedChildRuns.length;
+
+  return (
+    <div
+      className="text-left"
+      onClick={(e) => e.stopPropagation()}
+      onAuxClick={(e) => e.stopPropagation()}
+    >
+      <DropdownMenu open={open} onOpenChange={setOpen}>
+        <DropdownMenuTrigger asChild>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="h-8 gap-1"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <GitBranch className="size-4" />
+            {open && isLoading
+              ? t('Loading...')
+              : count > 0
+                ? t('{{count}} flow(s) called', { count })
+                : t('Flows called')}
+            <ChevronDown className="size-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-[320px] w-[380px] overflow-y-auto">
+          {open && isLoading ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              {t('Loading...')}
+            </div>
+          ) : count === 0 ? (
+            <div className="py-4 text-center text-sm text-muted-foreground">
+              {t('No subflows called')}
+            </div>
+          ) : (
+            <div className="p-1">
+              <div className="mb-2 px-2 text-xs font-medium text-muted-foreground">
+                {t('Called in sequence')}
+              </div>
+              {sortedChildRuns.map((childRun, index) => {
+                const duration =
+                  childRun.startTime && childRun.finishTime
+                    ? new Date(childRun.finishTime).getTime() -
+                      new Date(childRun.startTime).getTime()
+                    : undefined;
+                const { variant, Icon } = flowRunUtils.getStatusIcon(childRun.status);
+                return (
+                  <div
+                    key={childRun.id}
+                    className="flex cursor-pointer items-center gap-2 rounded-md px-2 py-2 text-sm hover:bg-muted/80"
+                    onClick={() => {
+                      setOpen(false);
+                      navigate(
+                        authenticationSession.appendProjectRoutePrefix(
+                          `/runs/${childRun.id}`,
+                        ),
+                      );
+                    }}
+                  >
+                    <span className="w-5 shrink-0 text-muted-foreground">
+                      {index + 1}.
+                    </span>
+                    <div className="min-w-0 flex-1">
+                      <div className="truncate font-medium">
+                        {childRun.flowVersion?.displayName ?? '—'}
+                      </div>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <StatusIconWithText
+                          icon={Icon}
+                          text={formatUtils.convertEnumToReadable(childRun.status)}
+                          variant={variant}
+                        />
+                        {childRun.created && (
+                          <FormattedDate
+                            date={new Date(childRun.created)}
+                            includeTime={true}
+                            className="text-xs"
+                          />
+                        )}
+                        {duration !== undefined && (
+                          <>
+                            <Hourglass className="size-3" />
+                            {formatUtils.formatDuration(duration)}
+                          </>
+                        )}
+                      </div>
+                    </div>
+                    <ExternalLink className="size-4 shrink-0 text-muted-foreground" />
+                  </div>
+                );
+              })}
+            </div>
+          )}
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
+  );
+}
 export const runsTableColumns = ({
   setSelectedRows,
   selectedRows,
@@ -56,7 +180,8 @@ export const runsTableColumns = ({
   excludedRows,
   setExcludedRows,
   data,
-}: RunsTableColumnsProps): ColumnDef<RowDataWithActions<FlowRun>>[] => [
+  projectId,
+}: RunsTableColumnsProps): ColumnDef<RowDataWithActions<FlowRun>, unknown>[] => [
   {
     id: 'select',
     accessorKey: 'select',
@@ -316,5 +441,20 @@ export const runsTableColumns = ({
         </div>
       );
     },
+  },
+  {
+    id: 'flowsCalled',
+    accessorKey: 'flowsCalled',
+    notClickable: true,
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t('Flows Called')}
+        icon={GitBranch}
+      />
+    ),
+    cell: ({ row }) => (
+      <FlowsCalledCell run={row.original} projectId={projectId} />
+    ),
   },
 ];

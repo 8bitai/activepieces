@@ -1,5 +1,5 @@
 import { OutputContext } from '@activepieces/pieces-framework'
-import { DEFAULT_MCP_DATA, EngineGenericError, EngineSocketEvent, FlowActionType, FlowRunStatus, GenericStepOutput, isFlowRunStateTerminal, isNil, logSerializer, RunEnvironment, StepOutput, StepOutputStatus, StepRunResponse, UpdateRunProgressRequest, UploadRunLogsRequest } from '@activepieces/shared'
+import { EngineGenericError, EngineSocketEvent, FlowActionType, FlowRunStatus, GenericStepOutput, isFlowRunStateTerminal, isNil, logSerializer, RunEnvironment, StepOutput, StepOutputStatus, StepRunResponse, UpdateRunProgressRequest, UploadRunLogsRequest } from '@activepieces/shared'
 import { Mutex } from 'async-mutex'
 import dayjs from 'dayjs'
 import fetchRetry from 'fetch-retry'
@@ -79,8 +79,7 @@ export const progressService = {
         }
     },
     backup: async (updateParams: BackUpLogsParams): Promise<void> => {
-        const isRunningMcp = updateParams.engineConstants.flowRunId === DEFAULT_MCP_DATA.flowRunId
-        if (isRunningMcp) {
+        if (isNil(updateParams.engineConstants.logsUploadUrl)) {
             return
         }
         await lock.runExclusive(async () => {

@@ -150,7 +150,7 @@ export class EngineConstants {
             flowVersionId: DEFAULT_MCP_DATA.flowVersionId,
             flowVersionState: DEFAULT_MCP_DATA.flowVersionState,
             triggerPieceName: DEFAULT_MCP_DATA.triggerPieceName,
-            flowRunId: DEFAULT_MCP_DATA.flowRunId,
+            flowRunId: input.flowRunId ?? DEFAULT_MCP_DATA.flowRunId,
             publicApiUrl: input.publicApiUrl,
             internalApiUrl: addTrailingSlashIfMissing(input.internalApiUrl),
             retryConstants: DEFAULT_RETRY_CONSTANTS,

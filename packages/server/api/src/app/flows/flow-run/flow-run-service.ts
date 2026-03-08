@@ -122,6 +122,16 @@ export const flowRunService = (log: FastifyBaseLogger) => ({
                 id: In(params.flowRunIds),
             })
         }
+        if (params.parentRunIdOnly) {
+            query = query.andWhere({
+                parentRunId: IsNull(),
+            })
+        }
+        if (params.parentRunId) {
+            query = query.andWhere({
+                parentRunId: params.parentRunId,
+            })
+        }
 
         const { data, cursor: newCursor } = await paginator.paginate(query)
         return paginationHelper.createPage<FlowRun>(data, newCursor)
@@ -674,6 +684,8 @@ type ListParams = {
     failedStepName?: string
     flowRunIds?: FlowRunId[]
     includeArchived?: boolean
+    parentRunIdOnly?: boolean
+    parentRunId?: FlowRunId
 }
 
 type GetOneParams = {

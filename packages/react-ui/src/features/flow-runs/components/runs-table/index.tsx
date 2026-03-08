@@ -91,6 +91,8 @@ export const RunsTable = () => {
         createdBefore: createdBefore ?? undefined,
         failedStepName,
         flowRunIds,
+        // Only top-level runs (no parent): includes standalone runs and orchestrator runs; subflow runs are shown via "Flows Called" dropdown
+        parentRunIdOnly: flowRunIds?.length ? undefined : true,
       });
     },
     refetchInterval: (query) => {
@@ -114,6 +116,7 @@ export const RunsTable = () => {
     setSelectedAll,
     excludedRows,
     setExcludedRows,
+    projectId,
   });
 
   const navigate = useNavigate();
