@@ -1,0 +1,204 @@
+{
+  "name": "Get Leave Records",
+  "type": "SHARED",
+  "summary": "Fetch employee leave records from Zoho People via webhook.",
+  "description": "A webhook-triggered workflow that calls the Zoho People API to retrieve leave records (GET /people/api/forms/leave/getRecords) using OAuth token authentication, then returns the response. Use this to query and expose leave data from Zoho People on demand.",
+  "tags": [],
+  "author": "akanksha ankath",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-webhook",
+    "@activepieces/piece-http"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "BJIAZ2JV5eve8yRpUkvm5"
+  },
+  "flows": [
+    {
+      "displayName": "get leave records",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Catch Webhook",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "propertySettings": {
+            "authType": {
+              "type": "MANUAL"
+            },
+            "authFields": {
+              "type": "MANUAL",
+              "schema": {}
+            },
+            "liveMarkdown": {
+              "type": "MANUAL"
+            },
+            "syncMarkdown": {
+              "type": "MANUAL"
+            },
+            "testMarkdown": {
+              "type": "MANUAL"
+            }
+          },
+          "pieceName": "@activepieces/piece-webhook",
+          "pieceVersion": "0.1.28",
+          "input": {
+            "authType": "none",
+            "authFields": {}
+          },
+          "sampleData": {},
+          "triggerName": "catch_webhook"
+        },
+        "nextAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "url": "https://people.zoho.in/people/api/forms/leave/getRecords",
+              "body": {},
+              "method": "GET",
+              "headers": {
+                "Authorization": "Zoho-oauthtoken 1000.d9cedf8880a9a42189d1550d5352759f.3a2bca277c05a6c7dd2a99b5acc480a0"
+              },
+              "authType": "NONE",
+              "body_type": "none",
+              "use_proxy": false,
+              "authFields": {},
+              "failureMode": "continue_none",
+              "queryParams": {},
+              "proxy_settings": {},
+              "followRedirects": false,
+              "response_is_binary": false
+            },
+            "pieceName": "@activepieces/piece-http",
+            "actionName": "send_request",
+            "sampleData": {},
+            "pieceVersion": "0.11.6",
+            "propertySettings": {
+              "url": {
+                "type": "MANUAL"
+              },
+              "body": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "method": {
+                "type": "MANUAL"
+              },
+              "headers": {
+                "type": "MANUAL"
+              },
+              "timeout": {
+                "type": "MANUAL"
+              },
+              "authType": {
+                "type": "MANUAL"
+              },
+              "body_type": {
+                "type": "MANUAL"
+              },
+              "use_proxy": {
+                "type": "MANUAL"
+              },
+              "authFields": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "failureMode": {
+                "type": "MANUAL"
+              },
+              "queryParams": {
+                "type": "MANUAL"
+              },
+              "proxy_settings": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "followRedirects": {
+                "type": "MANUAL"
+              },
+              "response_is_binary": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_2",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "fields": {
+                  "body": {},
+                  "status": 200,
+                  "headers": {}
+                },
+                "respond": "stop",
+                "responseType": "json"
+              },
+              "pieceName": "@activepieces/piece-webhook",
+              "actionName": "return_response",
+              "sampleData": {},
+              "pieceVersion": "0.1.28",
+              "propertySettings": {
+                "fields": {
+                  "type": "MANUAL",
+                  "schema": {
+                    "body": {
+                      "type": "JSON",
+                      "required": true,
+                      "displayName": "JSON Body"
+                    },
+                    "status": {
+                      "type": "NUMBER",
+                      "required": false,
+                      "displayName": "Status",
+                      "defaultValue": 200
+                    },
+                    "headers": {
+                      "type": "OBJECT",
+                      "required": false,
+                      "displayName": "Headers"
+                    }
+                  }
+                },
+                "respond": {
+                  "type": "MANUAL"
+                },
+                "responseType": {
+                  "type": "MANUAL"
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "displayName": "Return Response"
+          },
+          "displayName": "Send HTTP request"
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}

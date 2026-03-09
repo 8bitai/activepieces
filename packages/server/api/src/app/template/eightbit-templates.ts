@@ -19,6 +19,10 @@ import zendeskGetUsers from './eightbit-flows/zendesk_get_users.json'
 import zendeskListUrgentTickets from './eightbit-flows/zendesk_list_urgent_tickets.json'
 import zendeskUpdateTicket from './eightbit-flows/zendesk_update_ticket.json'
 import escalationHandler from './eightbit-flows/escalation_handler.json'
+import getContacts from './eightbit-flows/get_contacts.json'
+import jiraWorkflow from './eightbit-flows/jira_workflow.json'
+import getLeaveRecords from './eightbit-flows/get_leave_records.json'
+import leaveRequest from './eightbit-flows/leave_request.json'
 // ─────────────────────────────────────────────────────────────────────────────
 
 export const CATEGORY_8BIT_TEMPLATES = '8bit_templates'
@@ -63,6 +67,10 @@ const TEMPLATES: Template[] = [
     fromSharedTemplate('zendesk_list_urgent_tickets', zendeskListUrgentTickets as unknown as SharedTemplate),
     fromSharedTemplate('zendesk_update_ticket', zendeskUpdateTicket as unknown as SharedTemplate),
     fromSharedTemplate('escalation_handler', escalationHandler as unknown as SharedTemplate),
+    fromSharedTemplate('get_contacts', getContacts as unknown as SharedTemplate),
+    fromSharedTemplate('jira_workflow', jiraWorkflow as unknown as SharedTemplate),
+    fromSharedTemplate('get_leave_records', getLeaveRecords as unknown as SharedTemplate),
+    fromSharedTemplate('leave_request', leaveRequest as unknown as SharedTemplate),
 ]
 // ─────────────────────────────────────────────────────────────────────────────
 

@@ -1,0 +1,190 @@
+{
+  "name": "Leave Request",
+  "type": "SHARED",
+  "summary": "Submit an employee leave request to Zoho People via webhook.",
+  "description": "A webhook-triggered workflow that posts a leave request to the Zoho People API (POST /people/api/forms/json/leave/insertRecord) with employee ID, leave type, and date range, then returns the response. Use this to automate leave submissions from any external system or chatbot.",
+  "tags": [],
+  "author": "akanksha ankath",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-webhook",
+    "@activepieces/piece-http",
+    "@activepieces/piece-subflows"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "bGxZiTFY1oXDrRQAi2byw"
+  },
+  "flows": [
+    {
+      "displayName": "leave request",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Catch Webhook",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "propertySettings": {
+            "authType": {
+              "type": "MANUAL"
+            },
+            "authFields": {
+              "type": "MANUAL",
+              "schema": {}
+            },
+            "liveMarkdown": {
+              "type": "MANUAL"
+            },
+            "syncMarkdown": {
+              "type": "MANUAL"
+            },
+            "testMarkdown": {
+              "type": "MANUAL"
+            }
+          },
+          "pieceName": "@activepieces/piece-webhook",
+          "pieceVersion": "~0.1.28",
+          "input": {
+            "authType": "none",
+            "authFields": {}
+          },
+          "sampleData": {},
+          "triggerName": "catch_webhook"
+        },
+        "nextAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "url": "https://people.zoho.in/people/api/forms/json/leave/insertRecord",
+              "body": {},
+              "method": "POST",
+              "headers": {
+                "Authorization": "Zoho-oauthtoken 1000.d9cedf8880a9a42189d1550d5352759f.3a2bca277c05a6c7dd2a99b5acc480a0"
+              },
+              "authType": "NONE",
+              "body_type": null,
+              "use_proxy": false,
+              "authFields": {},
+              "failureMode": "continue_none",
+              "queryParams": {
+                "inputData": "{\n    \"Employee_ID\":\"314574000000293389\",\n    \"Leavetype\":\"314574000000293062\",\n    \"From\":\"29-Apr-2026\",\n    \"To\":\"30-Apr-2026\"\n  }"
+              },
+              "proxy_settings": {},
+              "followRedirects": false,
+              "response_is_binary": false
+            },
+            "pieceName": "@activepieces/piece-http",
+            "actionName": "send_request",
+            "sampleData": {},
+            "pieceVersion": "~0.11.6",
+            "propertySettings": {
+              "url": {
+                "type": "MANUAL"
+              },
+              "body": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "method": {
+                "type": "MANUAL"
+              },
+              "headers": {
+                "type": "MANUAL"
+              },
+              "timeout": {
+                "type": "MANUAL"
+              },
+              "authType": {
+                "type": "MANUAL"
+              },
+              "body_type": {
+                "type": "MANUAL"
+              },
+              "use_proxy": {
+                "type": "MANUAL"
+              },
+              "authFields": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "failureMode": {
+                "type": "MANUAL"
+              },
+              "queryParams": {
+                "type": "MANUAL"
+              },
+              "proxy_settings": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "followRedirects": {
+                "type": "MANUAL"
+              },
+              "response_is_binary": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "nextAction": {
+            "name": "step_2",
+            "skip": false,
+            "type": "PIECE",
+            "valid": true,
+            "settings": {
+              "input": {
+                "mode": "simple",
+                "response": {
+                  "response": {}
+                }
+              },
+              "pieceName": "@activepieces/piece-subflows",
+              "actionName": "returnResponse",
+              "sampleData": {},
+              "pieceVersion": "~0.4.10",
+              "propertySettings": {
+                "mode": {
+                  "type": "MANUAL"
+                },
+                "response": {
+                  "type": "MANUAL",
+                  "schema": {
+                    "response": {
+                      "type": "OBJECT",
+                      "required": true,
+                      "displayName": "Response"
+                    }
+                  }
+                }
+              },
+              "errorHandlingOptions": {
+                "retryOnFailure": {
+                  "value": false
+                },
+                "continueOnFailure": {
+                  "value": false
+                }
+              }
+            },
+            "displayName": "Return Response"
+          },
+          "displayName": "Send HTTP request"
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}
