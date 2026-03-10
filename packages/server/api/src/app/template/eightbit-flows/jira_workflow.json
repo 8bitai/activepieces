@@ -1,0 +1,193 @@
+{
+  "name": "Jira Workflow",
+  "type": "SHARED",
+  "summary": "Create a Jira issue automatically via webhook trigger.",
+  "description": "A webhook-triggered workflow that creates a new Jira Cloud issue with predefined project, issue type, priority, assignee, and reporter. Use this as a starting point to automate ticket creation from external events or API calls.",
+  "tags": [],
+  "author": "akanksha ankath",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-webhook",
+    "@activepieces/piece-jira-cloud"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "t8nq5c8mT7zVjEq8vQxDF"
+  },
+  "flows": [
+    {
+      "displayName": "Jira Workflow",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Catch Webhook",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "propertySettings": {
+            "authType": {
+              "type": "MANUAL"
+            },
+            "authFields": {
+              "type": "MANUAL",
+              "schema": {}
+            },
+            "liveMarkdown": {
+              "type": "MANUAL"
+            },
+            "syncMarkdown": {
+              "type": "MANUAL"
+            },
+            "testMarkdown": {
+              "type": "MANUAL"
+            }
+          },
+          "pieceName": "@activepieces/piece-webhook",
+          "pieceVersion": "~0.1.28",
+          "input": {
+            "authType": "none",
+            "authFields": {}
+          },
+          "sampleData": {},
+          "triggerName": "catch_webhook"
+        },
+        "nextAction": {
+          "name": "step_1",
+          "skip": false,
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "auth": "{{connections['HPr0l5FpiRMMinIIMvQUL']}}",
+              "adfFields": null,
+              "projectId": "10018",
+              "issueFields": {
+                "labels": [],
+                "summary": "Simeple test",
+                "assignee": "712020:5814b413-b1b6-4fac-b5b1-156576fd67f0",
+                "priority": "3",
+                "reporter": "712020:57642fc0-a136-49e2-bf44-16f726b91dc7",
+                "versions": [],
+                "components": [],
+                "fixVersions": []
+              },
+              "issueTypeId": "10008"
+            },
+            "pieceName": "@activepieces/piece-jira-cloud",
+            "actionName": "create_issue",
+            "sampleData": {},
+            "pieceVersion": "~0.2.5",
+            "propertySettings": {
+              "adfFields": {
+                "type": "MANUAL"
+              },
+              "projectId": {
+                "type": "MANUAL"
+              },
+              "issueFields": {
+                "type": "MANUAL",
+                "schema": {
+                  "labels": {
+                    "type": "ARRAY",
+                    "required": false,
+                    "displayName": "Labels"
+                  },
+                  "parent": {
+                    "type": "SHORT_TEXT",
+                    "required": false,
+                    "description": "Provide issue key.",
+                    "displayName": "Parent"
+                  },
+                  "summary": {
+                    "type": "LONG_TEXT",
+                    "required": true,
+                    "displayName": "Summary"
+                  },
+                  "assignee": {
+                    "type": "STATIC_DROPDOWN",
+                    "options": {
+                      "options": [],
+                      "disabled": false
+                    },
+                    "required": false,
+                    "displayName": "Assignee"
+                  },
+                  "priority": {
+                    "type": "STATIC_DROPDOWN",
+                    "options": {
+                      "options": [],
+                      "disabled": false
+                    },
+                    "required": true,
+                    "displayName": "Priority"
+                  },
+                  "reporter": {
+                    "type": "STATIC_DROPDOWN",
+                    "options": {
+                      "options": [],
+                      "disabled": false
+                    },
+                    "required": true,
+                    "displayName": "Reporter"
+                  },
+                  "versions": {
+                    "type": "STATIC_MULTI_SELECT_DROPDOWN",
+                    "options": {
+                      "options": [],
+                      "disabled": false
+                    },
+                    "required": false,
+                    "displayName": "Affects versions"
+                  },
+                  "components": {
+                    "type": "STATIC_MULTI_SELECT_DROPDOWN",
+                    "options": {
+                      "options": [],
+                      "disabled": false
+                    },
+                    "required": false,
+                    "displayName": "Components"
+                  },
+                  "description": {
+                    "type": "LONG_TEXT",
+                    "required": false,
+                    "displayName": "Description"
+                  },
+                  "environment": {
+                    "type": "LONG_TEXT",
+                    "required": false,
+                    "displayName": "Environment"
+                  },
+                  "fixVersions": {
+                    "type": "STATIC_MULTI_SELECT_DROPDOWN",
+                    "options": {
+                      "options": [],
+                      "disabled": false
+                    },
+                    "required": false,
+                    "displayName": "Fix versions"
+                  }
+                }
+              },
+              "issueTypeId": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "displayName": "Create Issue"
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}

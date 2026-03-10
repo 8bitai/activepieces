@@ -1,0 +1,136 @@
+{
+  "name": "Get Contacts",
+  "type": "SHARED",
+  "summary": "Fetch all HubSpot contacts via webhook trigger.",
+  "description": "A webhook-triggered workflow that calls the HubSpot CRM API to retrieve all contacts (GET /crm/v3/objects/contacts) using a custom API call. Use this to sync or inspect your HubSpot contact list on demand.",
+  "tags": [],
+  "author": "akanksha ankath",
+  "categories": [],
+  "pieces": [
+    "@activepieces/piece-webhook",
+    "@activepieces/piece-hubspot"
+  ],
+  "status": "PUBLISHED",
+  "blogUrl": "",
+  "metadata": {
+    "externalId": "O38yh6wJl8yy56sEycZED"
+  },
+  "flows": [
+    {
+      "displayName": "Get Contacts",
+      "trigger": {
+        "name": "trigger",
+        "valid": true,
+        "displayName": "Catch Webhook",
+        "type": "PIECE_TRIGGER",
+        "settings": {
+          "propertySettings": {
+            "authType": {
+              "type": "MANUAL"
+            },
+            "authFields": {
+              "type": "MANUAL",
+              "schema": {}
+            },
+            "liveMarkdown": {
+              "type": "MANUAL"
+            },
+            "syncMarkdown": {
+              "type": "MANUAL"
+            },
+            "testMarkdown": {
+              "type": "MANUAL"
+            }
+          },
+          "pieceName": "@activepieces/piece-webhook",
+          "pieceVersion": "0.1.29",
+          "input": {
+            "authType": "none",
+            "authFields": {}
+          },
+          "sampleData": {},
+          "triggerName": "catch_webhook"
+        },
+        "nextAction": {
+          "name": "step_1",
+          "type": "PIECE",
+          "valid": true,
+          "settings": {
+            "input": {
+              "url": {
+                "url": "https://api.hubapi.com/crm/v3/objects/contacts"
+              },
+              "auth": "{{connections['XFfhz3rZP2Agh70w8kFLY']}}",
+              "body": {},
+              "method": "GET",
+              "headers": {},
+              "failsafe": false,
+              "body_type": "none",
+              "queryParams": {},
+              "followRedirects": false,
+              "response_is_binary": false
+            },
+            "pieceName": "@activepieces/piece-hubspot",
+            "actionName": "custom_api_call",
+            "sampleData": {},
+            "pieceVersion": "0.8.4",
+            "propertySettings": {
+              "url": {
+                "type": "MANUAL",
+                "schema": {
+                  "url": {
+                    "type": "SHORT_TEXT",
+                    "required": true,
+                    "description": "You can either use the full URL or the relative path to the base URL\ni.e https://api.hubapi.com/resource or /resource",
+                    "displayName": "URL",
+                    "defaultValue": "https://api.hubapi.com"
+                  }
+                }
+              },
+              "body": {
+                "type": "MANUAL",
+                "schema": {}
+              },
+              "method": {
+                "type": "MANUAL"
+              },
+              "headers": {
+                "type": "MANUAL"
+              },
+              "timeout": {
+                "type": "MANUAL"
+              },
+              "failsafe": {
+                "type": "MANUAL"
+              },
+              "body_type": {
+                "type": "MANUAL"
+              },
+              "queryParams": {
+                "type": "MANUAL"
+              },
+              "followRedirects": {
+                "type": "MANUAL"
+              },
+              "response_is_binary": {
+                "type": "MANUAL"
+              }
+            },
+            "errorHandlingOptions": {
+              "retryOnFailure": {
+                "value": false
+              },
+              "continueOnFailure": {
+                "value": false
+              }
+            }
+          },
+          "displayName": "Custom API Call"
+        }
+      },
+      "valid": true,
+      "schemaVersion": "16",
+      "notes": []
+    }
+  ]
+}

@@ -89,7 +89,7 @@ export const templateController: FastifyPluginAsyncTypebox = async (app) => {
                 : [])
         const merged = cloudArray.includes(CATEGORY_8BIT_TEMPLATES)
             ? cloudArray
-            : [...cloudArray, CATEGORY_8BIT_TEMPLATES]
+            : [CATEGORY_8BIT_TEMPLATES, ...cloudArray]
         return { value: merged }
     })
 
