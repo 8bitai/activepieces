@@ -1,6 +1,6 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { t } from 'i18next';
-import { EllipsisVertical, Tag, Blocks, Clock, ToggleLeft } from 'lucide-react';
+import { BookMarked, EllipsisVertical, Tag, Blocks, Clock, ToggleLeft } from 'lucide-react';
 import { Dispatch, SetStateAction } from 'react';
 
 import FlowActionMenu from '@/app/components/flow-actions-menu';
@@ -9,6 +9,7 @@ import { RowDataWithActions } from '@/components/ui/data-table';
 import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { TruncatedColumnTextValue } from '@/components/ui/data-table/truncated-column-text-value';
 import { FormattedDate } from '@/components/ui/formatted-date';
+import { FlowLibraryToggle } from '@/features/flows/components/flow-library-toggle';
 import { FlowStatusToggle } from '@/features/flows/components/flow-status-toggle';
 import { PieceIconList } from '@/features/pieces/components/piece-icon-list';
 import { PopulatedFlow } from '@activepieces/shared';
@@ -87,6 +88,26 @@ export const flowsTableColumns = ({
           onClick={(e) => e.stopPropagation()}
         >
           <FlowStatusToggle flow={row.original}></FlowStatusToggle>
+        </div>
+      );
+    },
+  },
+  {
+    accessorKey: 'library',
+    header: ({ column }) => (
+      <DataTableColumnHeader
+        column={column}
+        title={t('Library')}
+        icon={BookMarked}
+      />
+    ),
+    cell: ({ row }) => {
+      return (
+        <div
+          className="flex items-center space-x-2"
+          onClick={(e) => e.stopPropagation()}
+        >
+          <FlowLibraryToggle flow={row.original} />
         </div>
       );
     },
