@@ -170,6 +170,18 @@ const WEBHOOK_PARAMS = {
 }
 
 
+function normalizeHeaders(headers: Record<string, string | string[] | undefined>): Record<string, string> {
+    const result: Record<string, string> = {}
+    for (const [key, value] of Object.entries(headers)) {
+        if (value === undefined) continue
+        const single = Array.isArray(value) ? value[0] : value
+        if (single === undefined) continue
+        // Use first value when comma-separated (e.g. duplicate Content-Type)
+        result[key] = single.split(',')[0].trim()
+    }
+    return result
+}
+
 async function convertRequest(
     request: FastifyRequest,
     projectId: string,
@@ -179,7 +191,7 @@ async function convertRequest(
     const isBinary = isBinaryContentType(contentType) && Buffer.isBuffer(request.body)
     return {
         method: request.method,
-        headers: request.headers as Record<string, string>,
+        headers: normalizeHeaders(request.headers as Record<string, string | string[] | undefined>),
         body: await convertBody(request, projectId, flowId),
         queryParams: request.query as Record<string, string>,
         rawBody: isBinary ? undefined : request.rawBody,

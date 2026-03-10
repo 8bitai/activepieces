@@ -405,6 +405,13 @@ export const flowService = (log: FastifyBaseLogger) => ({
                 })
                 break
             }
+
+            case FlowOperationType.UPDATE_LIBRARY: {
+                await flowRepo().update(id, {
+                    library: operation.request.library,
+                })
+                break
+            }
             case FlowOperationType.ADD_NOTE:
             case FlowOperationType.UPDATE_NOTE:
             case FlowOperationType.DELETE_NOTE: {

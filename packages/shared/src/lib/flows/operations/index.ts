@@ -50,6 +50,7 @@ export enum FlowOperationType {
     UPDATE_NOTE = 'UPDATE_NOTE',
     DELETE_NOTE = 'DELETE_NOTE',
     ADD_NOTE = 'ADD_NOTE',
+    UPDATE_LIBRARY = 'UPDATE_LIBRARY',
 }
 
 export const DeleteBranchRequest = Type.Object({
@@ -201,6 +202,11 @@ export const UpdateOwnerRequest = Type.Object({
     ownerId: Type.String(),
 })
 export type UpdateOwnerRequest = Static<typeof UpdateOwnerRequest>
+
+export const UpdateLibraryRequest = Type.Object({
+    library: Type.Boolean(),
+})
+export type UpdateLibraryRequest = Static<typeof UpdateLibraryRequest>
 export const FlowOperationRequest = Type.Union([
     Type.Object(
         {
@@ -421,7 +427,15 @@ export const FlowOperationRequest = Type.Union([
             title: 'Add Note',
         },
     ),
- 
+    Type.Object(
+        {
+            type: Type.Literal(FlowOperationType.UPDATE_LIBRARY),
+            request: UpdateLibraryRequest,
+        },
+        {
+            title: 'Update Library',
+        },
+    ),
 ])
 
 
@@ -520,7 +534,8 @@ export const flowOperations = {
                 clonedVersion = notesOperations.addNote(clonedVersion, operation.request)
                 break
             }
-      
+            case FlowOperationType.UPDATE_LIBRARY:
+                break
             default:
                 break
         }
