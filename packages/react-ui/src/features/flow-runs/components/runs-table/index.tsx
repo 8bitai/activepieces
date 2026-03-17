@@ -218,10 +218,14 @@ export const RunsTable = () => {
         status:
           status.length > 0
             ? (status.filter(
-                (s) => s === FlowRunStatus.PAUSED || s === FlowRunStatus.QUEUED,
+                (s) =>
+                  s === FlowRunStatus.PAUSED ||
+                  s === FlowRunStatus.QUEUED ||
+                  s === FlowRunStatus.RUNNING,
               ) as (
                 | typeof FlowRunStatus.PAUSED
                 | typeof FlowRunStatus.QUEUED
+                | typeof FlowRunStatus.RUNNING
               )[])
             : undefined,
         flowId,
@@ -304,7 +308,8 @@ export const RunsTable = () => {
           const allCancellable = selectedRows.every(
             (row) =>
               row.status === FlowRunStatus.PAUSED ||
-              row.status === FlowRunStatus.QUEUED,
+              row.status === FlowRunStatus.QUEUED ||
+              row.status === FlowRunStatus.RUNNING,
           );
           const isDisabled =
             selectedRows.length === 0 ||
@@ -317,7 +322,7 @@ export const RunsTable = () => {
                 hasPermission={userHasPermissionToRetryRun}
               >
                 <MessageTooltip
-                  message={t('Only paused or queued runs can be cancelled')}
+                  message={t('Only running, paused, or queued runs can be cancelled')}
                   isDisabled={allCancellable}
                 >
                   <Button

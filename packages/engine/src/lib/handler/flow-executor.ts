@@ -2,6 +2,7 @@ import { performance } from 'node:perf_hooks'
 import { EngineGenericError, ExecuteFlowOperation, ExecutionType, FlowAction, FlowActionType, FlowRunStatus, isNil } from '@activepieces/shared'
 import dayjs from 'dayjs'
 import { triggerHelper } from '../helper/trigger-helper'
+import { cancelService } from '../services/cancel.service'
 import { progressService } from '../services/progress.service'
 import { BaseExecutor } from './base-executor'
 import { codeExecutor } from './code-executor'
@@ -69,6 +70,13 @@ export const flowExecutor = {
                 currentAction = currentAction.nextAction
                 continue
             }
+            if (!testSingleStepMode && await cancelService.isCanceled(constants)) {
+                flowExecutionContext = flowExecutionContext.setVerdict({
+                    status: FlowRunStatus.CANCELED,
+                })
+                break
+            }
+
             const handler = this.getExecutorForAction(currentAction.type)
 
             await progressService.sendUpdate({

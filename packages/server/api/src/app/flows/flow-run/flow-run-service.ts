@@ -47,7 +47,7 @@ import { flowRunSideEffects } from './flow-run-side-effects'
 import { runsMetadataQueue } from './flow-runs-queue'
 import { flowRunLogsService } from './logs/flow-run-logs-service'
 
-const CANCELLABLE_STATUSES: FlowRunStatus[] = [FlowRunStatus.PAUSED, FlowRunStatus.QUEUED]
+const CANCELLABLE_STATUSES: FlowRunStatus[] = [FlowRunStatus.PAUSED, FlowRunStatus.QUEUED, FlowRunStatus.RUNNING]
 
 
 const tracer = trace.getTracer('flow-run-service')
@@ -458,10 +458,12 @@ export const flowRunService = (log: FastifyBaseLogger) => ({
 
 
 async function cancelSingleRun(log: FastifyBaseLogger, flowRun: FlowRun, platformId: string): Promise<void> {
-    await jobQueue(log).removeOneTimeJob({
-        jobId: flowRun.id,
-        platformId,
-    })
+    if (flowRun.status !== FlowRunStatus.RUNNING) {
+        await jobQueue(log).removeOneTimeJob({
+            jobId: flowRun.id,
+            platformId,
+        })
+    }
     await runsMetadataQueue(log).add({
         id: flowRun.id,
         projectId: flowRun.projectId,
@@ -469,6 +471,7 @@ async function cancelSingleRun(log: FastifyBaseLogger, flowRun: FlowRun, platfor
     })
     log.info({
         flowRunId: flowRun.id,
+        previousStatus: flowRun.status,
     }, '[cancelFlowRuns] Canceled flow run')
 }
 

@@ -111,6 +111,14 @@ async function getFlowResponse(status: FlowRunStatus): Promise<EngineHttpRespons
                 body: {},
                 headers: {},
             }
+        case FlowRunStatus.CANCELED:
+            return {
+                status: StatusCodes.SERVICE_UNAVAILABLE,
+                body: {
+                    message: 'The flow run was canceled',
+                },
+                headers: {},
+            }
         // Case that should be handled before
         default:
             throw new Error(`Unexpected flow run status: ${status}`)

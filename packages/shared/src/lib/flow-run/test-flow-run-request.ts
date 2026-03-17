@@ -38,6 +38,7 @@ export const BulkCancelFlowRequestBody = Type.Object({
     status: Type.Optional(Type.Array(Type.Union([
         Type.Literal(FlowRunStatus.PAUSED),
         Type.Literal(FlowRunStatus.QUEUED),
+        Type.Literal(FlowRunStatus.RUNNING),
     ]))),
     flowId: Type.Optional(Type.Array(ApId)),
     createdAfter: Type.Optional(Type.String()),

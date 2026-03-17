@@ -1,15 +1,24 @@
 
 import { securityAccess } from '@activepieces/server-shared'
-import {  FlowVersion, GetFlowVersionForWorkerRequest, ListFlowsRequest } from '@activepieces/shared'
+import {  FlowRunStatus, FlowVersion, GetFlowVersionForWorkerRequest, ListFlowsRequest } from '@activepieces/shared'
 import { FastifyPluginAsyncTypebox, Type } from '@fastify/type-provider-typebox'
 import { StatusCodes } from 'http-status-codes'
 import { entitiesMustBeOwnedByCurrentProject } from '../authentication/authorization'
 import { flowService } from '../flows/flow/flow.service'
+import { flowRunRepo } from '../flows/flow-run/flow-run-service'
 import { flowVersionService } from '../flows/flow-version/flow-version.service'
 
 export const flowEngineWorker: FastifyPluginAsyncTypebox = async (app) => {
 
     app.addHook('preSerialization', entitiesMustBeOwnedByCurrentProject)
+
+    app.get('/check-cancel', CheckCancelRequest, async (request) => {
+        const flowRun = await flowRunRepo().findOne({
+            where: { id: request.query.flowRunId },
+            select: ['status'],
+        })
+        return { canceled: flowRun?.status === FlowRunStatus.CANCELED }
+    })
 
     app.get('/populated-flows', GetAllFlowsByProjectParams, async (request) => {
         return flowService(request.log).list({
@@ -48,6 +57,22 @@ const GetAllFlowsByProjectParams = {
     },
     schema: {
         querystring: Type.Omit(ListFlowsRequest, ['projectId']),
+    },
+}
+
+const CheckCancelRequest = {
+    config: {
+        security: securityAccess.engine(),
+    },
+    schema: {
+        querystring: Type.Object({
+            flowRunId: Type.String(),
+        }),
+        response: {
+            [StatusCodes.OK]: Type.Object({
+                canceled: Type.Boolean(),
+            }),
+        },
     },
 }
 
