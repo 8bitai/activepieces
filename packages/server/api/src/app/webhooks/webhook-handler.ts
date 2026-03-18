@@ -148,11 +148,18 @@ export const webhookHandler = {
                 span.setAttribute('webhook.runId', createdRun.id)
                 params.onRunCreated?.(createdRun)
 
-                return await engineResponseWatcher(logger).oneTimeListener<EngineHttpResponse>(webhookRequestId, true, WEBHOOK_TIMEOUT_MS, {
+                const engineResponse = await engineResponseWatcher(logger).oneTimeListener<EngineHttpResponse>(webhookRequestId, true, WEBHOOK_TIMEOUT_MS, {
                     status: StatusCodes.NO_CONTENT,
                     body: {},
                     headers: {},
                 })
+                return {
+                    ...engineResponse,
+                    headers: {
+                        ...engineResponse.headers,
+                        'x-activepieces-flow-run-id': createdRun.id,
+                    },
+                }
             }
             finally {
                 span.end()
