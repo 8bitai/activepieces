@@ -16,7 +16,9 @@ export type FlowVerdict = {
     failedStep: FailedStep
 } | {
     status: FlowRunStatus.RUNNING
-} 
+} | {
+    status: FlowRunStatus.CANCELED
+}
 
 export class FlowExecutorContext {
     tags: readonly string[]

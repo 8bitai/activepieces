@@ -22,11 +22,20 @@ export const checkFileType = createAction({
   },
   async run(context) {
     const file = context.propsValue.file;
-    
+
+    if (!file) {
+      throw new Error(
+        'No file was received. Ensure the previous step (e.g. Web Form) outputs a file and that you selected that file in "File to Check". If the file comes from a form, use the form’s file field (e.g. Web Form → pdfFile).'
+      );
+    }
+
     const selectedMimeTypes = context.propsValue.mimeTypes;
 
-    // Determine the MIME type of the file
-    const fileType = file.extension ? mime.lookup(file.extension) || 'application/octet-stream' : 'application/octet-stream';
+    // Determine the MIME type: use extension first, then filename (e.g. "doc.pdf"), then fallback
+    const fileType =
+      (file.extension && mime.lookup(file.extension)) ||
+      (file.filename && mime.lookup(file.filename)) ||
+      'application/octet-stream';
 
     // Check if the file's MIME type matches any of the selected MIME types.
     const isMatch = fileType && selectedMimeTypes.includes(fileType);

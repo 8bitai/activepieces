@@ -158,10 +158,16 @@ const validateProperty = (property: PieceProperty, value: unknown, originalValue
             break
         }
         case PropertyType.FILE: {
+            const hasValidFileRef = (v: unknown) =>
+                isObject(v) && v !== null &&
+                (('url' in v && typeof (v as { url: unknown }).url === 'string') ||
+                 ('fileUrl' in v && typeof (v as { fileUrl: unknown }).fileUrl === 'string'))
             schema = z.any().refine(
-                (val) => isObject(val),
+                (val) => isObject(val) || (isNil(val) && hasValidFileRef(originalValue)),
                 {
-                    message: `Expected file url or base64 with mimeType, received: ${originalValue}`,
+                    message: typeof originalValue === 'object' && originalValue !== null
+                        ? 'File reference from the previous step could not be loaded. Check that the step outputs a file (e.g. Web Form file field) and that the file URL is reachable.'
+                        : `Expected file url or base64 with mimeType, received: ${originalValue}`,
                 },
             )
             break

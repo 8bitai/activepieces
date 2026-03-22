@@ -5,16 +5,44 @@ import isBase64 from 'is-base64'
 import mime from 'mime-types'
 import { ProcessorFn } from './types'
 
+function getUrlOrBase64(value: unknown): string | null {
+    if (isNil(value)) {
+        return null
+    }
+    if (isString(value)) {
+        return value
+    }
+    if (typeof value === 'object' && value !== null) {
+        const obj = value as Record<string, unknown>
+        if (isString(obj.url)) return obj.url
+        if (isString(obj.fileUrl)) return obj.fileUrl
+        // Nested (e.g. { data: { url: '...' } })
+        if (obj.data && typeof obj.data === 'object' && obj.data !== null) {
+            const data = obj.data as Record<string, unknown>
+            if (isString(data.url)) return data.url
+            if (isString(data.fileUrl)) return data.fileUrl
+        }
+        // Fallback: use first string value that looks like a URL (e.g. from form/file step output)
+        for (const v of Object.values(obj)) {
+            if (isString(v) && (v.startsWith('http://') || v.startsWith('https://') || v.startsWith('data:'))) {
+                return v
+            }
+        }
+    }
+    return null
+}
+
 export const fileProcessor: ProcessorFn = async (_property, urlOrBase64) => {
-    if (isNil(urlOrBase64) || !isString(urlOrBase64)) {
+    const input = getUrlOrBase64(urlOrBase64)
+    if (isNil(input)) {
         return null
     }
     try {
-        const file = handleBase64File(urlOrBase64)
+        const file = handleBase64File(input)
         if (!isNil(file)) {
             return file
         }
-        return await handleUrlFile(urlOrBase64)
+        return await handleUrlFile(input)
     }
     catch (e) {
         console.error(e)
