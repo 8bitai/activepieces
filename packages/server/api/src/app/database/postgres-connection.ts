@@ -335,6 +335,7 @@ import { AddTemplateIdToFlowEntity1768829135202 } from './migration/postgres/176
 import { AddEventStreaming1769084311004 } from './migration/postgres/1769084311004-AddEventStreaming'
 import { RemoveOperatorRole1769613456917 } from './migration/postgres/1769613456917-RemoveOperatorRole'
 import { AddLibraryToFlow1769702400000 } from './migration/postgres/1769702400000-AddLibraryToFlow'
+import { AddPushToEmbedToFlow1769802400000 } from './migration/postgres/1769802400000-AddPushToEmbedToFlow'
 
 const getSslConfig = (): boolean | TlsOptions => {
     const useSsl = system.get(AppSystemProp.POSTGRES_USE_SSL)
@@ -686,6 +687,7 @@ export const getMigrations = (): (new () => MigrationInterface)[] => {
         AddTemplateIdToFlowEntity1768829135202,
         RemoveOperatorRole1769613456917,
         AddLibraryToFlow1769702400000,
+        AddPushToEmbedToFlow1769802400000,
     ]
     return migrations
 }

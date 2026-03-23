@@ -392,5 +392,7 @@ function convertUpdateActionToDetails(event: FlowUpdatedEvent) {
             return `Deleted note in flow "${event.data.flowVersion.displayName}".`
         case FlowOperationType.UPDATE_LIBRARY:
             return `Updated library flag for flow "${event.data.flowVersion.displayName}" to ${event.data.request.request.library ? 'in library' : 'not in library'}.`
+        case FlowOperationType.UPDATE_PUSH_TO_EMBED:
+            return `Updated push to embed flag for flow "${event.data.flowVersion.displayName}" to ${event.data.request.request.pushToEmbed ? 'enabled' : 'disabled'}.`
     }
 }

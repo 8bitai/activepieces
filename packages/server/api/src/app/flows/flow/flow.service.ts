@@ -412,6 +412,19 @@ export const flowService = (log: FastifyBaseLogger) => ({
                 })
                 break
             }
+
+            case FlowOperationType.UPDATE_PUSH_TO_EMBED: {
+                if (operation.request.pushToEmbed) {
+                    const flow = await this.getOneOrThrow({ id, projectId })
+                    await flowRepo().update({ projectId: flow.projectId, pushToEmbed: true }, {
+                        pushToEmbed: false,
+                    })
+                }
+                await flowRepo().update(id, {
+                    pushToEmbed: operation.request.pushToEmbed,
+                })
+                break
+            }
             case FlowOperationType.ADD_NOTE:
             case FlowOperationType.UPDATE_NOTE:
             case FlowOperationType.DELETE_NOTE: {

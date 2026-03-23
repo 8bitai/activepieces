@@ -41,6 +41,7 @@ export const Flow = Type.Object({
     timeSavedPerRun: Nullable(Type.Number()),
     templateId: Nullable(Type.String()),
     library: Type.Optional(Type.Boolean()),
+    pushToEmbed: Type.Optional(Type.Boolean()),
 })
 
 export type Flow = Static<typeof Flow>
