@@ -80,6 +80,11 @@ export const FlowEntity = new EntitySchema<FlowSchema>({
             nullable: false,
             default: false,
         },
+        pushToEmbed: {
+            type: Boolean,
+            nullable: false,
+            default: false,
+        },
     },
     indices: [
         {

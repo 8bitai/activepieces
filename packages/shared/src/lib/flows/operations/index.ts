@@ -51,6 +51,7 @@ export enum FlowOperationType {
     DELETE_NOTE = 'DELETE_NOTE',
     ADD_NOTE = 'ADD_NOTE',
     UPDATE_LIBRARY = 'UPDATE_LIBRARY',
+    UPDATE_PUSH_TO_EMBED = 'UPDATE_PUSH_TO_EMBED',
 }
 
 export const DeleteBranchRequest = Type.Object({
@@ -207,6 +208,11 @@ export const UpdateLibraryRequest = Type.Object({
     library: Type.Boolean(),
 })
 export type UpdateLibraryRequest = Static<typeof UpdateLibraryRequest>
+
+export const UpdatePushToEmbedRequest = Type.Object({
+    pushToEmbed: Type.Boolean(),
+})
+export type UpdatePushToEmbedRequest = Static<typeof UpdatePushToEmbedRequest>
 export const FlowOperationRequest = Type.Union([
     Type.Object(
         {
@@ -436,6 +442,15 @@ export const FlowOperationRequest = Type.Union([
             title: 'Update Library',
         },
     ),
+    Type.Object(
+        {
+            type: Type.Literal(FlowOperationType.UPDATE_PUSH_TO_EMBED),
+            request: UpdatePushToEmbedRequest,
+        },
+        {
+            title: 'Update Push To Embed',
+        },
+    ),
 ])
 
 
@@ -535,6 +550,7 @@ export const flowOperations = {
                 break
             }
             case FlowOperationType.UPDATE_LIBRARY:
+            case FlowOperationType.UPDATE_PUSH_TO_EMBED:
                 break
             default:
                 break

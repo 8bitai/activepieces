@@ -180,6 +180,34 @@ export const flowHooks = {
       },
     });
   },
+  useChangeFlowPushToEmbed: ({
+    flowId,
+    onSuccess,
+  }: {
+    flowId: string;
+    onSuccess?: (flow: PopulatedFlow) => void;
+  }) => {
+    const queryClient = useQueryClient();
+    const projectId = authenticationSession.getProjectId()!;
+    return useMutation({
+      mutationFn: async (pushToEmbed: boolean) => {
+        const updated = await flowsApi.update(flowId, {
+          type: FlowOperationType.UPDATE_PUSH_TO_EMBED,
+          request: { pushToEmbed },
+        });
+        return updated;
+      },
+      onSuccess: (updatedFlow) => {
+        queryClient.invalidateQueries({
+          queryKey: createFlowsQueryKey(projectId),
+        });
+        queryClient.invalidateQueries({
+          queryKey: ['flow-table'],
+        });
+        onSuccess?.(updatedFlow);
+      },
+    });
+  },
   useExportFlows: () => {
     return useMutation({
       mutationFn: async (flows: PopulatedFlow[]) => {

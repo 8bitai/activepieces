@@ -170,6 +170,7 @@ import { AddPieceVersionToAppConnection1764856239445 } from './migration/sqlite/
 import { FixFlowRunIndexes1764871079154 } from './migration/sqlite/1764871079154-FixFlowRunIndexesSqlite'
 import { RemovePlatformSMTP1765264096034 } from './migration/sqlite/1765264096034-RemovePlatformSMTP'
 import { AddLibraryToFlowSqlite1769702400000 } from './migration/sqlite/1769702400000-AddLibraryToFlowSqlite'
+import { AddPushToEmbedToFlowSqlite1769802400000 } from './migration/sqlite/1769802400000-AddPushToEmbedToFlowSqlite'
 
 const getSqliteDatabaseFilePath = (): string => {
     const apConfigDirectoryPath = system.getOrThrow(AppSystemProp.CONFIG_PATH)
@@ -357,6 +358,7 @@ const getMigrations = (): (new () => MigrationInterface)[] => {
         FixFlowRunIndexes1764871079154,
         RemovePlatformSMTP1765264096034,
         AddLibraryToFlowSqlite1769702400000,
+        AddPushToEmbedToFlowSqlite1769802400000,
     ]
     const edition = system.getEdition()
     if (edition !== ApEdition.COMMUNITY) {
