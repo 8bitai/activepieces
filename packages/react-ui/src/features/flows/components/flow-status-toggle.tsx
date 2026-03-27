@@ -1,4 +1,5 @@
 import { t } from 'i18next';
+import { Check } from 'lucide-react';
 import { useEffect, useState } from 'react';
 
 import { ApErrorDialog } from '@/components/custom/ap-error-dialog/ap-error-dialog';
@@ -56,6 +57,7 @@ const FlowStatusToggle = ({ flow }: FlowStatusToggleProps) => {
           <div className="flex items-center justify-center">
             <Switch
               checked={isFlowPublished}
+              checkedIcon={<Check className="h-2.5 w-2.5 text-primary" />}
               onCheckedChange={() => changeStatus()}
               disabled={
                 isLoading ||
