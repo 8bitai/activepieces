@@ -34,7 +34,28 @@ export const todoController: FastifyPluginAsyncTypebox = async (app) => {
         })
     })
 
-    app.post('/', CreateTodoRequest, async (request) => {
+    app.post('/', {
+        schema: {
+            body: CreateTodoRequestBody,
+        },
+        preValidation: async (request) => {
+            const body = request.body as Record<string, unknown>
+            if (body?.assigneeId != null && !/^[0-9a-zA-Z]{21}$/.test(String(body.assigneeId))) {
+                delete body.assigneeId
+            }
+        },
+        config: {
+            security: securityAccess.project([PrincipalType.SERVICE, PrincipalType.ENGINE], undefined, {
+                type: ProjectResourceType.TABLE,
+                tableName: FlowEntity,
+                entitySourceType: EntitySourceType.BODY,
+                lookup: {
+                    paramKey: 'flowId',
+                    entityField: 'id',
+                },
+            }),
+        },
+    }, async (request) => {
         const { title, description, statusOptions, flowId, runId, assigneeId, resolveUrl, environment } = request.body
         return todoService(request.log).create({
             title,
@@ -133,23 +154,6 @@ const ListTodosRequest = {
     config: {
         security: securityAccess.project([PrincipalType.USER], undefined, {
             type: ProjectResourceType.QUERY,
-        }),
-    },
-}
-
-const CreateTodoRequest = {
-    schema: {
-        body: CreateTodoRequestBody,
-    },
-    config: {
-        security: securityAccess.project([PrincipalType.SERVICE, PrincipalType.ENGINE], undefined, {
-            type: ProjectResourceType.TABLE,
-            tableName: FlowEntity,
-            entitySourceType: EntitySourceType.BODY,
-            lookup: {
-                paramKey: 'flowId',
-                entityField: 'id',
-            },
         }),
     },
 }
