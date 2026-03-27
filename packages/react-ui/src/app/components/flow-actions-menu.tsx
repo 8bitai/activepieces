@@ -6,6 +6,7 @@ import {
   Download,
   GalleryVerticalEnd,
   Import,
+  MonitorPlay,
   Pencil,
   Share2,
   Trash2,
@@ -60,6 +61,7 @@ type FlowActionMenuProps = {
   onDuplicate: () => void;
   onDelete: () => void;
   onOwnerChange?: () => void;
+  isAnotherFlowPushedToEmbed?: boolean;
 } & (
   | { insideBuilder: true; onVersionsListClick: () => void }
   | { insideBuilder: false; onVersionsListClick: null }
@@ -77,6 +79,7 @@ const FlowActionMenu: React.FC<FlowActionMenuProps> = ({
   onOwnerChange,
   onVersionsListClick,
   insideBuilder,
+  isAnotherFlowPushedToEmbed,
 }) => {
   const isRunsPage = useLocation().pathname.includes('/runs');
   const { platform } = platformHooks.useCurrentPlatform();
@@ -101,6 +104,12 @@ const FlowActionMenu: React.FC<FlowActionMenuProps> = ({
     flow.version.state === FlowVersionState.LOCKED;
   const { projectMembers } = projectMembersHooks.useProjectMembers();
   const hasProjectMembers = projectMembers && projectMembers.length > 0;
+
+  const isPushToEmbed = flow.pushToEmbed ?? false;
+  const { mutate: changePushToEmbed, isPending: isPushToEmbedLoading } =
+    flowHooks.useChangeFlowPushToEmbed({
+      flowId: flow.id,
+    });
 
   const { mutate: duplicateFlow, isPending: isDuplicatePending } = useMutation({
     mutationFn: async () => {
@@ -304,6 +313,38 @@ const FlowActionMenu: React.FC<FlowActionMenuProps> = ({
             </div>
           </DropdownMenuItem>
         )}
+        {!insideBuilder && (
+          <PermissionNeededTooltip
+            hasPermission={userHasPermissionToUpdateFlow}
+          >
+            <DropdownMenuItem
+              disabled={
+                !userHasPermissionToUpdateFlow ||
+                isPushToEmbedLoading ||
+                (!isPushToEmbed && isAnotherFlowPushedToEmbed)
+              }
+              onClick={(e) => {
+                e.stopPropagation();
+                changePushToEmbed(!isPushToEmbed);
+                setOpen(false);
+              }}
+            >
+              <div className="flex cursor-pointer flex-row gap-2 items-center">
+                {isPushToEmbedLoading ? (
+                  <LoadingSpinner />
+                ) : (
+                  <MonitorPlay className="h-4 w-4" />
+                )}
+                <span>
+                  {isPushToEmbed
+                    ? t('Remove from Embed')
+                    : t('Push To Embed')}
+                </span>
+              </div>
+            </DropdownMenuItem>
+          </PermissionNeededTooltip>
+        )}
+
         {!embedState.isEmbedded && (
           <ShareTemplateDialog flowId={flow.id} flowVersionId={flowVersion.id}>
             <DropdownMenuItem onSelect={(e) => e.preventDefault()}>

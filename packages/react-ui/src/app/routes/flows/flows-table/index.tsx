@@ -88,6 +88,7 @@ export const FlowsTable = ({ refetch: parentRefetch }: FlowsTableProps) => {
       refetch: handleRefetch,
       refresh,
       setRefresh,
+      allFlows: data?.data ?? [],
     }),
     3,
   );

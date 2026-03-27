@@ -1,6 +1,6 @@
 import { ColumnDef } from '@tanstack/react-table';
 import { t } from 'i18next';
-import { BookMarked, EllipsisVertical, Tag, Blocks, Clock, ToggleLeft, MonitorPlay } from 'lucide-react';
+import { BookMarked, EllipsisVertical, MonitorPlay, Tag, Blocks, Clock, ToggleLeft } from 'lucide-react';
 import { Dispatch, SetStateAction } from 'react';
 
 import FlowActionMenu from '@/app/components/flow-actions-menu';
@@ -9,8 +9,12 @@ import { RowDataWithActions } from '@/components/ui/data-table';
 import { DataTableColumnHeader } from '@/components/ui/data-table/data-table-column-header';
 import { TruncatedColumnTextValue } from '@/components/ui/data-table/truncated-column-text-value';
 import { FormattedDate } from '@/components/ui/formatted-date';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 import { FlowLibraryToggle } from '@/features/flows/components/flow-library-toggle';
-import { FlowPushToEmbedToggle } from '@/features/flows/components/flow-push-to-embed-toggle';
 import { FlowStatusToggle } from '@/features/flows/components/flow-status-toggle';
 import { PieceIconList } from '@/features/pieces/components/piece-icon-list';
 import { PopulatedFlow } from '@activepieces/shared';
@@ -19,12 +23,14 @@ type FlowsTableColumnsProps = {
   refetch: () => void;
   refresh: number;
   setRefresh: Dispatch<SetStateAction<number>>;
+  allFlows: PopulatedFlow[];
 };
 
 export const flowsTableColumns = ({
   refetch,
   refresh,
   setRefresh,
+  allFlows,
 }: FlowsTableColumnsProps): (ColumnDef<RowDataWithActions<PopulatedFlow>> & {
   accessorKey: string;
 })[] => [
@@ -36,7 +42,22 @@ export const flowsTableColumns = ({
     ),
     cell: ({ row }) => {
       const displayName = row.original.version.displayName;
-      return <TruncatedColumnTextValue value={displayName} />;
+      const isPushedToEmbed = row.original.pushToEmbed;
+      return (
+        <div className="flex items-center gap-1.5">
+          <TruncatedColumnTextValue value={displayName} />
+          {isPushedToEmbed && (
+            <Tooltip>
+              <TooltipTrigger asChild onClick={(e) => e.stopPropagation()}>
+                <MonitorPlay className="h-4 w-4 shrink-0 text-primary" />
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                {t('Pushed to Embed')}
+              </TooltipContent>
+            </Tooltip>
+          )}
+        </div>
+      );
     },
   },
   {
@@ -114,30 +135,13 @@ export const flowsTableColumns = ({
     },
   },
   {
-    accessorKey: 'pushToEmbed',
-    header: ({ column }) => (
-      <DataTableColumnHeader
-        column={column}
-        title={t('Push To Embed')}
-        icon={MonitorPlay}
-      />
-    ),
-    cell: ({ row }) => {
-      return (
-        <div
-          className="flex items-center space-x-2"
-          onClick={(e) => e.stopPropagation()}
-        >
-          <FlowPushToEmbedToggle flow={row.original} />
-        </div>
-      );
-    },
-  },
-  {
     accessorKey: 'actions',
     header: ({ column }) => <DataTableColumnHeader column={column} title="" />,
     cell: ({ row }) => {
       const flow = row.original;
+      const isAnotherFlowPushedToEmbed = allFlows.some(
+        (f) => f.id !== flow.id && f.pushToEmbed,
+      );
       return (
         <div onClick={(e) => e.stopPropagation()}>
           <FlowActionMenu
@@ -146,6 +150,7 @@ export const flowsTableColumns = ({
             flow={flow}
             readonly={false}
             flowVersion={flow.version}
+            isAnotherFlowPushedToEmbed={isAnotherFlowPushedToEmbed}
             onRename={() => {
               setRefresh(refresh + 1);
               refetch();
