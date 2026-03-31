@@ -1,0 +1,18 @@
+FROM nginx:1.27-alpine
+
+RUN apk add --no-cache gettext
+
+# Copy the built React app
+COPY dist/packages/react-ui /usr/share/nginx/html/
+
+# Copy nginx config as TEMPLATE (envsubst will process it at runtime)
+COPY nginx.k8s.conf /etc/nginx/nginx.conf.template
+
+# Copy entrypoint
+COPY docker-entrypoint-frontend.sh /docker-entrypoint.sh
+RUN chmod +x /docker-entrypoint.sh
+
+LABEL service=activepieces-frontend
+
+ENTRYPOINT ["/docker-entrypoint.sh"]
+EXPOSE 80

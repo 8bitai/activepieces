@@ -1,0 +1,14 @@
+.angular
+.dockerignore
+.env
+.git
+.gitattributes
+.github
+.history
+.idea
+*.log
+.vscode
+builds
+deploy
+docs
+node_modules

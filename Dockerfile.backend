@@ -1,0 +1,53 @@
+FROM node:20.19-bullseye-slim
+
+ENV LANG=en_US.UTF-8 \
+    LANGUAGE=en_US:en \
+    LC_ALL=en_US.UTF-8
+
+# Install system dependencies (same as current Dockerfile base stage)
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+        openssh-client \
+        python3 \
+        g++ \
+        build-essential \
+        git \
+        poppler-utils \
+        poppler-data \
+        procps \
+        locales \
+        locales-all \
+        ca-certificates \
+        libcap-dev \
+        unzip \
+        curl && \
+    rm -rf /var/lib/apt/lists/*
+
+# Install bun (needed for dependency installation)
+RUN export ARCH=$(uname -m) && \
+    if [ "$ARCH" = "x86_64" ]; then \
+      curl -fSL https://github.com/oven-sh/bun/releases/download/bun-v1.3.10/bun-linux-x64-baseline.zip -o bun.zip; \
+    elif [ "$ARCH" = "aarch64" ]; then \
+      curl -fSL https://github.com/oven-sh/bun/releases/download/bun-v1.3.10/bun-linux-aarch64.zip -o bun.zip; \
+    fi && \
+    unzip bun.zip && mv bun-*/bun /usr/local/bin/bun && chmod +x /usr/local/bin/bun && rm -rf bun.zip bun-*
+
+WORKDIR /usr/src/app
+
+# Copy root package.json and lockfile (needed by bun install validation at startup)
+COPY package.json bun.lock .npmrc ./
+
+# Copy built backend + engine + shared + packages
+COPY dist/packages/server/ ./dist/packages/server/
+COPY dist/packages/engine/ ./dist/packages/engine/
+COPY dist/packages/shared/ ./dist/packages/shared/
+COPY packages/ ./packages/
+
+# Install production dependencies for the backend API
+RUN cd dist/packages/server/api && bun install --production
+
+LABEL service=activepieces-backend
+
+EXPOSE 3000
+
+CMD ["node", "--enable-source-maps", "dist/packages/server/api/main.cjs"]
