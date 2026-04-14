@@ -8,7 +8,6 @@ import { useForm } from 'react-hook-form';
 import { useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { useEmbedding } from '@/components/embed-provider';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -81,7 +80,6 @@ export const InviteUserDialog = ({
   setOpen: (_open: boolean) => void;
   onInviteSuccess?: () => void;
 }) => {
-  const { embedState } = useEmbedding();
   const [invitationLink, setInvitationLink] = useState('');
   const [inputValue, setInputValue] = useState('');
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -227,7 +225,7 @@ export const InviteUserDialog = ({
     setShowSuggestions(value.trim().length > 0 && !isPlatformPage);
   };
 
-  if (embedState.isEmbedded || !userHasPermissionToInviteUser) {
+  if (!userHasPermissionToInviteUser) {
     return null;
   }
 
