@@ -33,8 +33,17 @@ const disallowedRoutes = [
   '/v1/user-invitations/accept',
   '/v1/webhooks',
 ];
-//This is important to avoid redirecting to sign-in page when the user is deleted for embedding scenarios
+// Avoid hard redirect on user-profile fetches so embed / token refresh can recover (useCurrentUser uses GET /v1/users/:id).
 const ignroedGlobalErrorHandlerRoutes = ['/v1/users/me'];
+
+function shouldSkipGlobalErrorHandlerForUrl(url: string): boolean {
+  if (ignroedGlobalErrorHandlerRoutes.includes(url)) {
+    return true;
+  }
+  // GET /v1/users/:id (one path segment); excludes e.g. /v1/users/projects/platforms
+  return /^\/v1\/users\/[^/]+$/.test(url);
+}
+
 function isUrlRelative(url: string) {
   return !url.startsWith('http') && !url.startsWith('https');
 }
@@ -83,10 +92,7 @@ function request<TResponse>(
         : (response.data as TResponse),
     )
     .catch((error) => {
-      if (
-        isAxiosError(error) &&
-        !ignroedGlobalErrorHandlerRoutes.includes(url)
-      ) {
+      if (isAxiosError(error) && !shouldSkipGlobalErrorHandlerForUrl(url)) {
         globalErrorHandler(error);
       }
       throw error;
