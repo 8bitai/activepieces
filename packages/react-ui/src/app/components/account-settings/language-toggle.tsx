@@ -117,7 +117,7 @@ export const LanguageToggle = () => {
             target="_blank"
             to="https://www.activepieces.com/docs/about/i18n"
           >
-            {t('Help translate Activepieces →')}
+            {t('Help translate Neutrino Agenticworkflows →')}
           </Link>
         </div>
       )}

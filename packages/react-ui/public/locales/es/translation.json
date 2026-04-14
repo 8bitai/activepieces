@@ -1,4 +1,4 @@
-{
+﻿{
   "0": "",
   "Support": "Soporte",
   "Runs": "Ejecutar",
@@ -593,11 +593,11 @@
   "Last Used": "",
   "Never": "",
   "Enable API Keys": "Habilitar claves API",
-  "Create and manage API keys to access Activepieces APIs.": "Crear y administrar claves API para acceder a APIs Activepieces .",
+  "Create and manage API keys to access Activepieces APIs.": "Crear y administrar claves API para acceder a APIs Neutrino Agenticworkflows .",
   "Mange API keys": "Mange API keys",
   "New Api Key": "Nueva Clave Api",
   "No API keys found": "No se encontraron claves API",
-  "Start by creating an API key to communicate with Activepieces APIs": "Empezar por crear una clave API para comunicarse con las APIs Activepieces",
+  "Start by creating an API key to communicate with Activepieces APIs": "Empezar por crear una clave API para comunicarse con las APIs Neutrino Agenticworkflows",
   "Delete API Key": "Borrar Clave API",
   "Are you sure you want to delete this API key?": "¿Estás seguro de que quieres eliminar esta clave API?",
   "API Key": "Clave API",
@@ -677,7 +677,7 @@
   "{provider} Client Secret": "{provider} secreto de cliente",
   "Single sign-on settings updated": "Configuración de inicio de sesión único actualizada",
   "Configure SAML 2.0 SSO": "Configurar SAML 2.0 SSO",
-  "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n": "\n**Instrucciones de configuración**:  \nPor favor, consulta la siguiente documentación: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**URL de inicio de sesión único**:  \n```text\n{samlAcs}\n```\n**URI de audiencia (ID de entidad del SP)**:\n```text\nActivepieces\n```\n",
+  "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n": "\n**Instrucciones de configuración**:  \nPor favor, consulta la siguiente documentación: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**URL de inicio de sesión único**:  \n```text\n{samlAcs}\n```\n**URI de audiencia (ID de entidad del SP)**:\n```text\nNeutrino Agenticworkflows\n```\n",
   "IDP Metadata": "Metadatos IDP",
   "IDP Certificate": "Certificado IDP",
   "Unlock AI": "Unlock AI",

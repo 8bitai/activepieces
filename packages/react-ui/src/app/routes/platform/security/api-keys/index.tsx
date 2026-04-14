@@ -100,7 +100,7 @@ const ApiKeysPage = () => {
       locked={!platform.plan.apiKeysEnabled}
       lockTitle={t('Enable API Keys')}
       lockDescription={t(
-        'Create and manage API keys to access Activepieces APIs.',
+        'Create and manage API keys to access Neutrino Agenticworkflows APIs.',
       )}
       lockVideoUrl="https://cdn.activepieces.com/videos/showcase/api-keys.mp4"
     >
@@ -126,7 +126,7 @@ const ApiKeysPage = () => {
         <DataTable
           emptyStateTextTitle={t('No API keys found')}
           emptyStateTextDescription={t(
-            'Start by creating an API key to communicate with Activepieces APIs',
+            'Start by creating an API key to communicate with Neutrino Agenticworkflows APIs',
           )}
           emptyStateIcon={<Key className="size-14" />}
           page={data}

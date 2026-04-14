@@ -1,4 +1,4 @@
-{
+﻿{
   "0": "",
   "Support": "支持",
   "Runs": "运行",
@@ -675,7 +675,7 @@
   "{provider} Client Secret": "{provider}客户密钥",
   "Single sign-on settings updated": "单点登录设置已更新",
   "Configure SAML 2.0 SSO": "配置 SAML 2.0 SSO",
-  "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n": "\n**设置说明**： \n请查看以下文档：[SAML SSO](https://activepieces.com/docs/security/sso) \n\n**单点登录 URL**： \n\n{samlAcs} \n\n**受众 URI（SP 实体 ID）**： \nActivepieces\n",
+  "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n": "\n**设置说明**： \n请查看以下文档：[SAML SSO](https://activepieces.com/docs/security/sso) \n\n**单点登录 URL**： \n\n{samlAcs} \n\n**受众 URI（SP 实体 ID）**： \nNeutrino Agenticworkflows\n",
   "IDP Metadata": "IDP 元数据",
   "IDP Certificate": "IDP 证书",
   "Unlock AI": "Unlock AI",

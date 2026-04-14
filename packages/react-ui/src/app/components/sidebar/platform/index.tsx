@@ -190,11 +190,15 @@ export function PlatformSidebar() {
             to={defaultRoute}
             className={cn(buttonVariants({ variant: 'ghost', size: 'icon' }))}
           >
-            <img
-              src={branding.logos.logoIconUrl}
-              alt={t('home')}
-              className="h-5 w-5 object-contain"
-            />
+            {branding.logos.logoIconUrl ? (
+              <img
+                src={branding.logos.logoIconUrl}
+                alt={t('home')}
+                className="h-5 w-5 object-contain"
+              />
+            ) : (
+              <span className="text-sm font-bold">N</span>
+            )}
           </Link>
           <h1 className="truncate font-semibold">{branding.websiteName}</h1>
         </div>

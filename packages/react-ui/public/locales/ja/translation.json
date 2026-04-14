@@ -1,4 +1,4 @@
-{
+﻿{
   "0": "",
   "Support": "サポート",
   "Runs": "実行",
@@ -591,11 +591,11 @@
   "Last Used": "",
   "Never": "",
   "Enable API Keys": "API キーを有効にする",
-  "Create and manage API keys to access Activepieces APIs.": "Activepieces APIにアクセスするためのAPIキーを作成および管理します。",
+  "Create and manage API keys to access Activepieces APIs.": "Neutrino Agenticworkflows APIにアクセスするためのAPIキーを作成および管理します。",
   "Mange API keys": "Mange API keys",
   "New Api Key": "新しいAPIキー",
   "No API keys found": "API キーが見つかりません",
-  "Start by creating an API key to communicate with Activepieces APIs": "Activepieces APIと通信するためのAPIキーを作成することから始めましょう",
+  "Start by creating an API key to communicate with Activepieces APIs": "Neutrino Agenticworkflows APIと通信するためのAPIキーを作成することから始めましょう",
   "Delete API Key": "API キーを削除",
   "Are you sure you want to delete this API key?": "この API キーを削除してもよろしいですか？",
   "API Key": "API キー",
@@ -675,7 +675,7 @@
   "{provider} Client Secret": "{provider} クライアントシークレット",
   "Single sign-on settings updated": "シングルサインオンの設定が更新されました",
   "Configure SAML 2.0 SSO": "SAML 2.0 SSO の設定",
-  "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n": "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n",
+  "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nActivepieces\n```\n": "\n**Setup Instructions**:\nPlease check the following documentation: [SAML SSO](https://activepieces.com/docs/security/sso)\n\n**Single sign-on URL**:\n```text\n{samlAcs}\n```\n**Audience URI (SP Entity ID)**:\n```text\nNeutrino Agenticworkflows\n```\n",
   "IDP Metadata": "IDPメタデータ",
   "IDP Certificate": "IDP証明書",
   "Unlock AI": "Unlock AI",
