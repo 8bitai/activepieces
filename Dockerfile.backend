@@ -43,6 +43,10 @@ COPY dist/packages/engine/ ./dist/packages/engine/
 COPY dist/packages/shared/ ./dist/packages/shared/
 COPY packages/ ./packages/
 
+# Install production dependencies at workspace root (needed by packageManager.validate() at startup)
+# This pre-warms bun's module cache so the startup-time `bun install` completes instantly
+RUN bun install --production
+
 # Install production dependencies for the backend API
 RUN cd dist/packages/server/api && bun install --production
 
