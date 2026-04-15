@@ -12,16 +12,21 @@ import { workerPostBoot } from './app/worker'
 
 const start = async (app: FastifyInstance): Promise<void> => {
     try {
+        console.log('[STARTUP] 6/7 Listening on port 3000...')
         await app.listen({
             host: '0.0.0.0',
             port: 3000,
         })
+        console.log('[STARTUP] 6/7 Server is now listening on port 3000')
         if (system.isWorker()) {
+            console.log('[STARTUP] 7/7 Running worker post-boot...')
             await workerPostBoot(app)
         }
         if (system.isApp()) {
+            console.log('[STARTUP] 7/7 Running app post-boot...')
             await appPostBoot(app)
         }
+        console.log('[STARTUP] 7/7 Post-boot complete — server ready!')
     }
     catch (err) {
         app.log.error(err)
@@ -58,14 +63,25 @@ function setupTimeZone(): void {
 
 const main = async (): Promise<void> => {
     setupTimeZone()
+    console.log('[STARTUP] 1/7 Timezone set to UTC')
+
     if (system.isApp()) {
+        console.log('[STARTUP] 2/7 Acquiring database migration lock...')
         await distributedLock(system.globalLogger()).runExclusive({
             key: 'database-migration-lock',
             timeoutInSeconds: dayjs.duration(10, 'minutes').asSeconds(),
             fn: async () => initializeDatabase({ runMigrations: true }),
         })
+        console.log('[STARTUP] 3/7 Database initialized')
     }
+    else {
+        console.log('[STARTUP] 2/7 Skipping DB migration (worker mode)')
+        console.log('[STARTUP] 3/7 Skipping DB init (worker mode)')
+    }
+
+    console.log('[STARTUP] 4/7 Setting up server (Fastify + plugins + modules)...')
     const app = await setupServer()
+    console.log('[STARTUP] 5/7 Server setup complete')
 
     process.on('SIGINT', async () => {
         await stop(app).catch((e) => system.globalLogger().error(e, '[Main#stop]'))

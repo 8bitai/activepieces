@@ -45,10 +45,15 @@ COPY packages/ ./packages/
 
 # Install production dependencies at workspace root (needed by packageManager.validate() at startup)
 # This pre-warms bun's module cache so the startup-time `bun install` completes instantly
-RUN bun install --production
+RUN echo "[BUILD] Installing workspace root dependencies..." && \
+    echo '#!/bin/sh' > /usr/local/bin/husky && chmod +x /usr/local/bin/husky && \
+    bun install --production && \
+    echo "[BUILD] Workspace root dependencies installed successfully"
 
 # Install production dependencies for the backend API
-RUN cd dist/packages/server/api && bun install --production
+RUN echo "[BUILD] Installing backend API dependencies..." && \
+    cd dist/packages/server/api && bun install --production && \
+    echo "[BUILD] Backend API dependencies installed successfully"
 
 LABEL service=activepieces-backend
 
