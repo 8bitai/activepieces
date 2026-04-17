@@ -55,7 +55,7 @@ export const errorHandler = async (
         })
     }
     else {
-        request.log.error('[errorHandler]: ' + JSON.stringify(error))
+        request.log.error({ err: error }, '[errorHandler]')
         if (
             !error.statusCode ||
       error.statusCode === StatusCodes.INTERNAL_SERVER_ERROR.valueOf()

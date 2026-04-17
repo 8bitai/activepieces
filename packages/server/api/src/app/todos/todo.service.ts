@@ -15,13 +15,19 @@ const todoRepo = repoFactory(TodoEntity)
 
 export const todoService = (log: FastifyBaseLogger) => ({
     async create(params: CreateParams): Promise<PopulatedTodo> {
-        const todo = await todoRepo().save({
-            id: apId(),
-            status: UNRESOLVED_STATUS,  
-            locked: params.locked ?? false,
-            ...params,
-        })
-        return enrichTodoWithAssignee(todo, log)
+        try {
+            const todo = await todoRepo().save({
+                id: apId(),
+                status: UNRESOLVED_STATUS,  
+                locked: params.locked ?? false,
+                ...params,
+            })
+            return enrichTodoWithAssignee(todo, log)
+        }
+        catch (error) {
+            log.error({ err: error, params }, '[todoService#create] Failed to create todo')
+            throw error
+        }
     },
     async getOne(params: GetParams): Promise<Todo | null> {
         const todo = await todoRepo().findOneBy({ id: params.id, ...spreadIfDefined('platformId', params.platformId), ...spreadIfDefined('projectId', params.projectId) })
