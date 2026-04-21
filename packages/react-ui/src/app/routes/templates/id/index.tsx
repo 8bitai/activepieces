@@ -246,7 +246,7 @@ const TemplateDetailsPage = ({ template }: TemplateDetailsPageProps) => {
 
                 <div className="flex items-center gap-1 text-xs">
                   <span>{t('By')}</span>
-                  <span className="font-medium">{template.author}</span>
+                  <span className="font-medium">{template.author?.replace(/activepieces/gi, 'Neutrino Agenticworkflows')}</span>
                   <span>•</span>
                   <span>
                     {formatUtils.formatDate(new Date(template.created))}

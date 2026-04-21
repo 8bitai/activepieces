@@ -28,12 +28,16 @@ function SidebarLogoCollapsed({ linkTo }: { linkTo?: string }) {
       onClick={() => navigate(linkTo || '/')}
       className="h-10! w-8! p-0! group-data-[collapsible=icon]:h-10! items-center justify-center"
     >
-      <img
-        src={branding.logos.logoIconUrl}
-        alt={t('home')}
-        className="h-5! w-5! shrink-0"
-        draggable={false}
-      />
+      {branding.logos.logoIconUrl ? (
+        <img
+          src={branding.logos.logoIconUrl}
+          alt={t('home')}
+          className="h-5! w-5! shrink-0"
+          draggable={false}
+        />
+      ) : (
+        <span className="text-sm font-bold shrink-0">N</span>
+      )}
     </Button>
   );
 }
@@ -47,12 +51,18 @@ function SidebarLogoFull({ linkTo }: { linkTo?: string }) {
       onClick={() => navigate(linkTo || '/')}
       className="h-10! group-data-[collapsible=icon]:h-10! justify-center items-center"
     >
-      <img
-        src={branding.logos.fullLogoUrl}
-        alt={t('home')}
-        className="h-8 object-contain animate-in fade-in duration-100 delay-[100ms] fill-mode-backwards"
-        draggable={false}
-      />
+      {branding.logos.fullLogoUrl ? (
+        <img
+          src={branding.logos.fullLogoUrl}
+          alt={t('home')}
+          className="h-8 object-contain animate-in fade-in duration-100 delay-[100ms] fill-mode-backwards"
+          draggable={false}
+        />
+      ) : (
+        <span className="text-sm font-bold animate-in fade-in duration-100 delay-[100ms] fill-mode-backwards">
+          {branding.websiteName}
+        </span>
+      )}
     </SidebarMenuButton>
   );
 }

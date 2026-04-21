@@ -1,4 +1,4 @@
-import { AIProviderAuthConfig, AIProviderConfig, AIProviderName } from '@activepieces/shared'
+﻿import { AIProviderAuthConfig, AIProviderConfig, AIProviderName } from '@activepieces/shared'
 import { AIProviderStrategy } from './ai-provider'
 import { anthropicProvider } from './anthropic-provider'
 import { azureProvider } from './azure-provider'
@@ -18,7 +18,7 @@ export const aiProviders: Record<AIProviderName, AIProviderStrategy<AIProviderAu
     [AIProviderName.CUSTOM]: openAICompatibleProvider,
     [AIProviderName.ACTIVEPIECES]: {
         ...openRouterProvider,
-        name: 'Activepieces',
+        name: 'Neutrino Agenticworkflows',
     },
 }
 

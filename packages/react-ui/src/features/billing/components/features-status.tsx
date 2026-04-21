@@ -38,7 +38,7 @@ const LICENSE_PROPS_MAP = {
     description: 'Save and share workflow templates across your team',
   },
   customAppearanceEnabled: {
-    label: 'Brand Activepieces',
+    label: 'Brand Neutrino Agenticworkflows',
     description: 'Customize the look and feel with your company branding',
   },
   teamProjectsLimit: {

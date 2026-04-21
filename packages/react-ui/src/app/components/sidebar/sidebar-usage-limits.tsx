@@ -59,7 +59,7 @@ const SidebarUsageLimits = React.memo(() => {
           value={Math.round(platform.usage?.aiCreditsRemaining ?? 0)}
           suffix={t('remaining')}
           tooltip={t(
-            'Used when running AI pieces with Activepieces as the provider instead of your own API keys.',
+            'Used when running AI pieces with Neutrino Agenticworkflows as the provider instead of your own API keys.',
           )}
         />
         <UsageRow

@@ -80,7 +80,7 @@ const SignUpForm = ({
       case ApEdition.CLOUD: {
         if (
           typeof websiteName === 'string' &&
-          websiteName.toLowerCase() === 'activepieces'
+          websiteName.toLowerCase() === 'neutrino agenticworkflows'
         ) {
           form.setValue('newsLetter', true);
           return true;
@@ -315,7 +315,7 @@ const SignUpForm = ({
                     ></Checkbox>
                   </FormControl>
                   <Label htmlFor="newsLetter">
-                    {t(`Receive updates and newsletters from activepieces`)}
+                    {t(`Receive updates and newsletters from Neutrino Agenticworkflows`)}
                   </Label>
                   <FormMessage />
                 </FormItem>
