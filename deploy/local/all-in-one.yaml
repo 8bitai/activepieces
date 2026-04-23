@@ -1,0 +1,264 @@
+# ==============================================================================
+# Activepieces Split Deployment - All K8s Resources
+# ==============================================================================
+
+# --- Namespace ---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: activepieces
+---
+
+# ==============================================================================
+# 1. PostgreSQL
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: postgres
+  namespace: activepieces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres
+  template:
+    metadata:
+      labels:
+        app: postgres
+    spec:
+      containers:
+        - name: postgres
+          image: postgres:14.4
+          ports:
+            - containerPort: 5432
+          env:
+            - name: POSTGRES_DB
+              value: "activepieces"
+            - name: POSTGRES_USER
+              value: "postgres"
+            - name: POSTGRES_PASSWORD
+              value: "postgres"
+          volumeMounts:
+            - name: postgres-data
+              mountPath: /var/lib/postgresql/data
+      volumes:
+        - name: postgres-data
+          emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: postgres-service
+  namespace: activepieces
+spec:
+  selector:
+    app: postgres
+  ports:
+    - port: 5432
+      targetPort: 5432
+---
+
+# ==============================================================================
+# 2. Redis
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis
+  namespace: activepieces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redis
+  template:
+    metadata:
+      labels:
+        app: redis
+    spec:
+      containers:
+        - name: redis
+          image: redis:7.0
+          ports:
+            - containerPort: 6379
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-service
+  namespace: activepieces
+spec:
+  selector:
+    app: redis
+  ports:
+    - port: 6379
+      targetPort: 6379
+---
+
+# ==============================================================================
+# 3. Backend ConfigMap (non-sensitive env vars)
+# ==============================================================================
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: activepieces-backend-config
+  namespace: activepieces
+data:
+  AP_ENVIRONMENT: "prod"
+  AP_EDITION: "ce"
+  AP_DB_TYPE: "POSTGRES"
+  AP_POSTGRES_HOST: "postgres-service"
+  AP_POSTGRES_PORT: "5432"
+  AP_POSTGRES_DATABASE: "activepieces"
+  AP_POSTGRES_USERNAME: "postgres"
+  AP_QUEUE_MODE: "REDIS"
+  AP_REDIS_TYPE: "STANDALONE"
+  AP_REDIS_HOST: "redis-service"
+  AP_REDIS_PORT: "6379"
+  AP_FRONTEND_URL: "http://localhost:8080"
+  AP_EXECUTION_MODE: "UNSANDBOXED"
+  AP_PIECES_SOURCE: "DB"
+  AP_PIECES_SYNC_MODE: "NONE"
+  AP_TELEMETRY_ENABLED: "false"
+  AP_WEBHOOK_TIMEOUT_SECONDS: "30"
+  AP_TRIGGER_DEFAULT_POLL_INTERVAL: "5"
+  AP_FLOW_TIMEOUT_SECONDS: "600"
+---
+
+# ==============================================================================
+# 4. Backend Secret (sensitive env vars)
+# ==============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: activepieces-backend-secret
+  namespace: activepieces
+type: Opaque
+stringData:
+  AP_ENCRYPTION_KEY: "7f3a9b2c8e1d4f6a5c9e2b8d4f1a6c3e"
+  AP_JWT_SECRET: "a1b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2"
+  AP_POSTGRES_PASSWORD: "postgres"
+---
+
+# ==============================================================================
+# 5. Backend Deployment
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activepieces-backend
+  namespace: activepieces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: activepieces-backend
+  template:
+    metadata:
+      labels:
+        app: activepieces-backend
+    spec:
+      containers:
+        - name: activepieces-backend
+          image: activepieces-backend:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 3000
+          envFrom:
+            - configMapRef:
+                name: activepieces-backend-config
+            - secretRef:
+                name: activepieces-backend-secret
+          startupProbe:
+            httpGet:
+              path: /v1/health
+              port: 3000
+            failureThreshold: 120
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /v1/health
+              port: 3000
+            periodSeconds: 5
+          livenessProbe:
+            httpGet:
+              path: /v1/health
+              port: 3000
+            periodSeconds: 10
+          resources:
+            requests:
+              cpu: 500m
+              memory: 1Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: activepieces-backend-service
+  namespace: activepieces
+spec:
+  selector:
+    app: activepieces-backend
+  ports:
+    - port: 3000
+      targetPort: 3000
+      name: http
+---
+
+# ==============================================================================
+# 6. Frontend Deployment
+# ==============================================================================
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: activepieces-frontend
+  namespace: activepieces
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: activepieces-frontend
+  template:
+    metadata:
+      labels:
+        app: activepieces-frontend
+    spec:
+      containers:
+        - name: activepieces-frontend
+          image: activepieces-frontend:local
+          imagePullPolicy: Never
+          ports:
+            - containerPort: 80
+          env:
+            - name: AP_BACKEND_HOST
+              value: "activepieces-backend-service"
+            - name: AP_BACKEND_PORT
+              value: "3000"
+            - name: AP_APP_TITLE
+              value: "Activepieces"
+          readinessProbe:
+            httpGet:
+              path: /
+              port: 80
+            initialDelaySeconds: 5
+            periodSeconds: 5
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: activepieces-frontend-service
+  namespace: activepieces
+spec:
+  selector:
+    app: activepieces-frontend
+  ports:
+    - port: 80
+      targetPort: 80
+      name: http

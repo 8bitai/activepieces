@@ -9,6 +9,8 @@ export const systemConstants = {
 export type SystemProp = AppSystemProp | WorkerSystemProp
 
 let cachedVersion: string | undefined
+let lastLatestReleaseFailureAt = 0
+const LATEST_RELEASE_FAILURE_BACKOFF_MS = 60 * 60 * 1000
 
 export enum AppSystemProp {
     API_KEY = 'API_KEY',
@@ -172,20 +174,24 @@ export const apVersionUtil = {
         return packageJson.version
     },
     async getLatestRelease(): Promise<string> {
+        if (cachedVersion) {
+            return cachedVersion
+        }
+        if (Date.now() - lastLatestReleaseFailureAt < LATEST_RELEASE_FAILURE_BACKOFF_MS) {
+            return '0.0.0'
+        }
         try {
-            if (cachedVersion) {
-                return cachedVersion
-            }
             const response = await axios.get<PackageJson>(
                 'https://raw.githubusercontent.com/activepieces/activepieces/main/package.json',
                 {
-                    timeout: 5000,
+                    timeout: 1500,
                 },
             )
             cachedVersion = response.data.version
             return response.data.version
         }
         catch (ex) {
+            lastLatestReleaseFailureAt = Date.now()
             return '0.0.0'
         }
     },
